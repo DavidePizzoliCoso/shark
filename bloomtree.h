@@ -67,7 +67,7 @@ class SSBT {
 			{
 				SimpleBF node = coda.front();
 				coda.pop_front();
-				cout<<node.printBF()<<endl;
+				node.printBF(cout);
 				
 				if(node.sx != nullptr)
 					coda.push_back(*node.sx);

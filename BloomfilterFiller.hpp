@@ -39,31 +39,32 @@ public:
 
 	void operator()(vector<pair<string,vector<uint64_t>>> *genes) const 
 	{
-		list<SimpleBF> coda;
+		list<SimpleBF*> coda;
 		SimpleBF* bloom;
 		for(const auto & gene : *genes) 
 		{
-			bloom = new SimpleBF(sbt->_size);
+			bloom = new SimpleBF(gene.first, sbt->_size);
 			for(const auto position : gene.second)
 				bloom->add_at(position % sbt->_size);
-			coda.push_back(*bloom);
+			coda.push_back(bloom);
 		}
 		delete genes;
 		
+		int i = 0;
 		while (coda.size() > 1)
 		{
-			SimpleBF sx = coda.front();
+			SimpleBF* sx = coda.front();
 			coda.pop_front();
-			SimpleBF dx = coda.front();
+			SimpleBF* dx = coda.front();
 			coda.pop_front();
 			
-			SimpleBF* node = new SimpleBF(sbt->_size);
-			node->setSxChild(&sx);
-			node->setDxChild(&dx);
-			node->setBF(&sx, &dx);
-			coda.push_back(*node);
+			SimpleBF* node = new SimpleBF("NODO 00000" + to_string(++i), sbt->_size);
+			node->setSxChild(sx);
+			node->setDxChild(dx);
+			node->setBF(sx, dx);
+			coda.push_back(node);
 		}
-		sbt->setRoot(&coda.front());
+		sbt->setRoot(coda.front());
 		sbt->printTree();
 		
 	}

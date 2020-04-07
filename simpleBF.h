@@ -59,12 +59,14 @@ class SimpleBF
 		typedef bit_vector bit_vector_t;
 		typedef int_vector<16> index_kmer_t;
 		
+		
+		SimpleBF* sx;
+		SimpleBF* dx;
+		
 		// Costruttore
-		SimpleBF(const size_t size): _size(size), _bf(size,0)
-		{
-			sx = nullptr;
-			dx = nullptr;
-		}
+		SimpleBF(const string id_gene, const size_t size): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _id(id_gene) {}
+		
+		SimpleBF(const SimpleBF& x): sx(x.sx), dx(x.dx), _size(x._size), _bf(x._bf), _id(x._id) {}
 		
 		// Distruttore
 		~SimpleBF() {}
@@ -114,24 +116,19 @@ class SimpleBF
 			
 		}
 		
-		string printBF()
+		void printBF(ostream& out)
 		{
-			int n = _bf.size();
-			string ret = "";
-			for(int i=0; i < n; i++)
-				if(_bf[i] == 0)
-					ret += "0";
-				else
-					ret += "1";
-			return ret;
+			out << _id << "\t";
+			for(size_t i=0; i < _bf.size(); i++)
+				out << (int)_bf[i];
+			out << endl;
 		}
 		
-		
+	private:
 		SimpleBF() = delete;
 		size_t _size;
 		bit_vector_t _bf;
-		SimpleBF* sx;
-		SimpleBF* dx;
+		string _id;
 		index_kmer_t _index_kmer;
 };
 
