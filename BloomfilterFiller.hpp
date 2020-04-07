@@ -26,25 +26,49 @@
 #include <zlib.h>
 #include <string>
 #include <vector>
+#include <list>
 #include <memory>
-#include "bloomfilter.h"
+#include "bloomtree.h"
+#include "simpleBF.h"
 
 using namespace std;
 
 class BloomfilterFiller {
 public:
-  BloomfilterFiller(BF *_bf) : bf(_bf) {}
+	BloomfilterFiller(SSBT *_sbt) : sbt(_sbt) {}
 
-  void operator()(vector<uint64_t> *positions) const {
-    if(positions) {
-      for(const auto & p : *positions) {
-        bf->add_at(p % bf->_size);
-      }
-      delete positions;
-    }
-  }
+	void operator()(vector<pair<string,vector<uint64_t>>> *genes) const 
+	{
+		list<SimpleBF> coda;
+		SimpleBF* bloom;
+		for(const auto & gene : *genes) 
+		{
+			bloom = new SimpleBF(sbt->_size);
+			for(const auto position : gene.second)
+				bloom->add_at(position % sbt->_size);
+			coda.push_back(*bloom);
+		}
+		delete genes;
+		
+		while (coda.size() > 1)
+		{
+			SimpleBF sx = coda.front();
+			coda.pop_front();
+			SimpleBF dx = coda.front();
+			coda.pop_front();
+			
+			SimpleBF* node = new SimpleBF(sbt->_size);
+			node->setSxChild(&sx);
+			node->setDxChild(&dx);
+			node->setBF(&sx, &dx);
+			coda.push_back(*node);
+		}
+		sbt->setRoot(&coda.front());
+		sbt->printTree();
+		
+	}
 
 private:
-  BF* bf;
+	SSBT* sbt;
 };
 #endif

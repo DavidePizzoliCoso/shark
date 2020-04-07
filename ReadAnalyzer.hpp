@@ -22,7 +22,7 @@
 #ifndef READANALYZER_HPP
 #define READANALYZER_HPP
 
-#include "bloomfilter.h"
+#include "simpleBF.h"
 #include "kmer_utils.hpp"
 #include <vector>
 #include <array>
@@ -33,7 +33,7 @@ class ReadAnalyzer {
 public:
   typedef vector<assoc_t> output_t;
 
-  ReadAnalyzer(BF *_bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
+  ReadAnalyzer(SimpleBF *_bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
   bf(_bf), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single) {}
 
   output_t* operator()(vector<elem_t> *reads) const {
@@ -118,7 +118,7 @@ public:
   }
 
 private:
-  BF * const bf;
+  SimpleBF * const bf;
   const vector<string>& legend_ID;
   const uint k;
   const double c;

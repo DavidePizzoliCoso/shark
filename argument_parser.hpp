@@ -53,9 +53,9 @@ namespace opt {
   static std::string out1_path = "";
   static std::string out2_path = "";
   static bool paired_flag = false;
-  static uint k = 17;
+  static uint k = 6;
   static double c = 0.6;
-  static uint64_t bf_size = ((uint64_t)0b1 << 33);
+  static uint64_t bf_size = ((uint64_t)0b1 << 7);
   static char min_quality = 0;
   static bool single = false;
   static bool verbose = false;

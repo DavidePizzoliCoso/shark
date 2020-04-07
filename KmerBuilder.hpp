@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "bloomfilter.h"
+#include "simpleBF.h"
 #include "kmer_utils.hpp"
 
 using namespace std;
@@ -37,19 +37,20 @@ class KmerBuilder {
 public:
   KmerBuilder(size_t _k) : k(_k) {}
 
-  vector<uint64_t>* operator()(vector<pair<string, string>> *texts) const {
+  vector<pair<string,vector<uint64_t>>>* operator()(vector<pair<string, string>> *texts) const {
     if(texts) {
-      vector<uint64_t>* kmer_pos = new vector<uint64_t>();
+	  vector<pair<string,vector<uint64_t>>>* ret = new vector<pair<string,vector<uint64_t>>>();
+      vector<uint64_t> kmer_pos;
       uint64_t kmer, rckmer, key;
       for(const auto & p : *texts) {
+		kmer_pos.clear();
         if(p.second.size() >= k) {
           int _pos = 0;
           kmer = build_kmer(p.second, _pos, k);
           if(kmer == (uint64_t)-1) continue;
           rckmer = revcompl(kmer, k);
           key = min(kmer, rckmer);
-          kmer_pos->push_back(_get_hash(key));
-
+          kmer_pos.push_back(_get_hash(key));
           for (int pos = _pos; pos < (int)p.second.size(); ++pos) {
             uint8_t new_char = to_int[p.second[pos]];
             if(new_char == 0) { // Found a char different from A, C, G, T
@@ -64,12 +65,17 @@ public:
               rckmer = rsprepend(rckmer, reverse_char(new_char), k);
             }
             key = min(kmer, rckmer);
-            kmer_pos->push_back(_get_hash(key));
+            kmer_pos.push_back(_get_hash(key));
           }
         }
+		ret->push_back(make_pair(p.first,kmer_pos));
       }
       delete texts;
-      return kmer_pos;
+	  /*
+	  for(const auto & w : *ret)
+		cout<<w.first<<endl<<w.second<<endl;
+	  */
+      return ret;
     }
     return NULL;
   }
