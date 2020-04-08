@@ -59,21 +59,21 @@ class SSBT {
 		
 		void printTree()
 		{
-			list<SimpleBF> coda;
+			list<SimpleBF*> coda;
 			
-			coda.push_back(*root);
+			coda.push_back(root);
 			
 			while(coda.size() > 0)
 			{
-				SimpleBF node = coda.front();
+				SimpleBF* node = coda.front();
 				coda.pop_front();
-				node.printBF(cout);
+				node->printBF(cout);
 				
-				if(node.sx != nullptr)
-					coda.push_back(*node.sx);
+				if(node->sx != nullptr)
+					coda.push_back(node->sx);
 				
-				if(node.dx != nullptr)
-					coda.push_back(*node.dx);
+				if(node->dx != nullptr)
+					coda.push_back(node->dx);
 			}
 			
 		}

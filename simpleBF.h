@@ -38,20 +38,17 @@ using namespace sdsl;
 
 class KmerBuilder;
 class BloomfilterFiller;
+class SSBT;
 
 #ifndef SHARK_HUGEPAGESIZE
 #define SHARK_HUGEPAGESIZE (2 * 1024 * 1024)
 #endif
 
-using namespace std;
-
-class KmerBuilder;
-class BloomfilterFiller;
-
 class SimpleBF
 {
 	friend class KmerBuilder;
 	friend class BloomfilterFiller;
+	friend class SSBT;
 	
 	public:
 		typedef uint64_t kmer_t;
@@ -59,17 +56,17 @@ class SimpleBF
 		typedef bit_vector bit_vector_t;
 		typedef int_vector<16> index_kmer_t;
 		
-		
-		SimpleBF* sx;
-		SimpleBF* dx;
-		
 		// Costruttore
-		SimpleBF(const string id_gene, const size_t size): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _id(id_gene) {}
+		SimpleBF(const size_t size, const string& id_gene): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _id(id_gene) {}
 		
 		SimpleBF(const SimpleBF& x): sx(x.sx), dx(x.dx), _size(x._size), _bf(x._bf), _id(x._id) {}
 		
 		// Distruttore
-		~SimpleBF() {}
+		~SimpleBF()
+		{
+			delete sx;
+			delete dx;
+		}
 		
 		void add_at(const uint64_t p)
 		{
@@ -126,6 +123,9 @@ class SimpleBF
 		
 	private:
 		SimpleBF() = delete;
+		
+		SimpleBF* sx;
+		SimpleBF* dx;
 		size_t _size;
 		bit_vector_t _bf;
 		string _id;

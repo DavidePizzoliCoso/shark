@@ -31,6 +31,8 @@ shark
 /example
 /lib/
 /include/
+/altro/
+/sdsl-lite/
 
 # Logs and databases #
 ######################
@@ -56,5 +58,3 @@ shark
 ehthumbs.db
 Thumbs.db
 r
-
-altro/*

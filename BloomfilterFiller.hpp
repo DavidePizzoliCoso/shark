@@ -43,7 +43,7 @@ public:
 		SimpleBF* bloom;
 		for(const auto & gene : *genes) 
 		{
-			bloom = new SimpleBF(gene.first, sbt->_size);
+			bloom = new SimpleBF(sbt->_size, gene.first);
 			for(const auto position : gene.second)
 				bloom->add_at(position % sbt->_size);
 			coda.push_back(bloom);
@@ -58,7 +58,7 @@ public:
 			SimpleBF* dx = coda.front();
 			coda.pop_front();
 			
-			SimpleBF* node = new SimpleBF("NODO 00000" + to_string(++i), sbt->_size);
+			SimpleBF* node = new SimpleBF(sbt->_size, "NODO 00000" + to_string(++i));
 			node->setSxChild(sx);
 			node->setDxChild(dx);
 			node->setBF(sx, dx);
