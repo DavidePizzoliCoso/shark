@@ -50,7 +50,10 @@ class SSBT {
 		
 		SSBT(const size_t size) : _size(size) {}
 
-		~SSBT() {}
+		~SSBT()
+		{
+			delete root;
+		}
 		
 		void setRoot(SimpleBF* node)
 		{

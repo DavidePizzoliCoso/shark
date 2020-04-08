@@ -22,7 +22,7 @@
 #ifndef READANALYZER_HPP
 #define READANALYZER_HPP
 
-#include "simpleBF.h"
+#include "bloomtree.h"
 #include "kmer_utils.hpp"
 #include <vector>
 #include <array>
@@ -33,11 +33,12 @@ class ReadAnalyzer {
 public:
   typedef vector<assoc_t> output_t;
 
-  ReadAnalyzer(SimpleBF *_bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
-  bf(_bf), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single) {}
+  ReadAnalyzer(SSBT *tree, uint _k, double _c, bool _only_single = false) :
+  _tree(tree), k(_k), c(_c), only_single(_only_single) {}
 
   output_t* operator()(vector<elem_t> *reads) const {
     output_t* associations = new output_t();
+	/*
     vector<int> genes_idx;
     typedef pair<pair<unsigned int, unsigned int>, unsigned int> gene_cov_t;
     map<int, gene_cov_t> classification_id;
@@ -109,6 +110,7 @@ public:
       }
     }
     delete reads;
+	*/
     if(associations->size())
       return associations;
     else {
@@ -118,8 +120,7 @@ public:
   }
 
 private:
-  SimpleBF * const bf;
-  const vector<string>& legend_ID;
+  SSBT * const _tree;
   const uint k;
   const double c;
   const bool only_single;
