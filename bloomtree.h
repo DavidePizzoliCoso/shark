@@ -46,6 +46,7 @@ class SSBT {
 	friend class BloomfilterFiller;
 
 	public:
+		typedef uint64_t kmer_t;
 		typedef bit_vector bit_vector_t;
 		
 		SSBT(const size_t size) : _size(size) {}
@@ -58,6 +59,38 @@ class SSBT {
 		void setRoot(SimpleBF* node)
 		{
 			root = node;
+		}
+		
+		vector<string*> get_genes(const kmer_t &kmer) const 
+		{
+			list<SimpleBF*> coda;
+			vector<string*> genes;
+			uint64_t hash = _get_hash(kmer);
+			size_t bf_idx = hash % _size;
+			
+			coda.push_back(root);
+			genes.clear();
+			
+			while(coda.size() > 0)
+			{
+				SimpleBF* node = coda.front();
+				coda.pop_front();
+				
+				if (node->_bf[bf_idx])
+				{
+					if(node->sx == nullptr && node->dx == nullptr) // This is a leaf
+						genes.push_back(&node->_id);
+					else // This is a node
+					{
+						if(node->sx != nullptr)
+							coda.push_back(node->sx);
+						
+						if(node->dx != nullptr)
+							coda.push_back(node->dx);
+					}
+				}
+			}
+			return genes;
 		}
 		
 		void printTree()

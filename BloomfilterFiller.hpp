@@ -65,7 +65,7 @@ public:
 			coda.push_back(node);
 		}
 		sbt->setRoot(coda.front());
-		sbt->printTree();
+		// sbt->printTree();
 		
 	}
 
