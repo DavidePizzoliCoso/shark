@@ -39,13 +39,11 @@ public:
 	output_t* operator()(vector<elem_t> *reads) const 
 	{
 		output_t* associations = new output_t();
-
-		vector<int> genes_idx;
-		typedef pair<pair<unsigned int, unsigned int>, unsigned int> gene_cov_t;
-		map<int, gene_cov_t> classification_id;
+		
+		map<string, int> counter_occurence;
 		for(const auto & p : *reads) 
 		{
-			classification_id.clear();
+			counter_occurence.clear();
 			const string& read_seq = p.first; // Get Sequence ID
 			unsigned int len = 0; // Get read length
 			for (unsigned int pos = 0; pos < read_seq.size(); ++pos) 
@@ -58,7 +56,10 @@ public:
 				if(kmer == (uint64_t)-1) continue;
 				uint64_t rckmer = revcompl(kmer, k);
 				
-				auto id_kmer = _tree->get_genes(min(kmer, rckmer));
+				auto genes = _tree->get_genes(min(kmer, rckmer));
+				int n = genes.size();
+				for(int i = 0; i < n; i++)
+					counter_occurence[genes[i]]++;
 				
 				for (; pos < (int)read_seq.size(); ++pos) 
 				{
@@ -78,31 +79,32 @@ public:
 						rckmer = rsprepend(rckmer, reverse_char(new_char), k);
 					}
 					
-					id_kmer = _tree->get_genes(min(kmer, rckmer));
+				
+					genes = _tree->get_genes(min(kmer, rckmer));
+					n = genes.size();
+					for(int i = 0; i < n; i++)
+						counter_occurence[genes[i]]++;
 				}
 			}
 			
-			/*
-			unsigned int max = 0;
-			unsigned int maxk = 0;
-			genes_idx.clear();
-			for(auto it=classification_id.cbegin(); it!=classification_id.cend(); ++it) 
+			vector<string> best_genes;
+			int max = -1;
+			for(auto it=counter_occurence.cbegin(); it!=counter_occurence.cend(); ++it)
 			{
-				if(it->second.first.first == max && it->second.first.second == maxk) 
-					genes_idx.push_back(it->first);
-				else if(it->second.first.first > max || (it->second.first.first == max && it->second.first.second > maxk)) 
+				if(it->second == max)
 				{
-					genes_idx.clear();
-					max = it->second.first.first;
-					maxk = it->second.first.second;
-					genes_idx.push_back(it->first);
+					best_genes.push_back(it->first);
+				}
+				else if(it->second > max)
+				{
+					best_genes.clear();
+					max = it->second;
+					best_genes.push_back(it->first);
 				}
 			}
-
-			if(max >= c*len && (!only_single || genes_idx.size() == 1)) 
-				for(const auto idx : genes_idx) 
-					associations->push_back({ legend_ID[idx], std::move(get<1>(p)) });
-			*/
+			if(max >= c*len && (!only_single || best_genes.size() == 1)) 
+				for(const auto idx : best_genes) 
+					associations->push_back({ idx, std::move(get<1>(p)) });
 		}
 		delete reads;
 	

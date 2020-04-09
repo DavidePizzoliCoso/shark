@@ -61,10 +61,10 @@ class SSBT {
 			root = node;
 		}
 		
-		vector<string*> get_genes(const kmer_t &kmer) const 
+		vector<string> get_genes(const kmer_t &kmer) const 
 		{
 			list<SimpleBF*> coda;
-			vector<string*> genes;
+			vector<string> genes;
 			uint64_t hash = _get_hash(kmer);
 			size_t bf_idx = hash % _size;
 			
@@ -79,7 +79,7 @@ class SSBT {
 				if (node->_bf[bf_idx])
 				{
 					if(node->sx == nullptr && node->dx == nullptr) // This is a leaf
-						genes.push_back(&node->_id);
+						genes.push_back(node->_id);
 					else // This is a node
 					{
 						if(node->sx != nullptr)
