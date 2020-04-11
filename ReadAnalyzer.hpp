@@ -39,13 +39,15 @@ public:
 	output_t* operator()(vector<elem_t> *reads) const 
 	{
 		output_t* associations = new output_t();
+		vector<string> best_genes;
+		typedef pair<pair<unsigned int, unsigned int>, unsigned int> gene_cov_t;
+		map<string, gene_cov_t> classification_id;
 		
-		map<string, int> counter_occurence;
 		for(const auto & p : *reads) 
 		{
-			counter_occurence.clear();
-			const string& read_seq = p.first; // Get Sequence ID
-			unsigned int len = 0; // Get read length
+			classification_id.clear();
+			const string& read_seq = p.first;
+			unsigned int len = 0;
 			for (unsigned int pos = 0; pos < read_seq.size(); ++pos) 
 				len += to_int[read_seq[pos]] > 0 ? 1 : 0;
 			
@@ -58,51 +60,71 @@ public:
 				
 				auto genes = _tree->get_genes(min(kmer, rckmer));
 				int n = genes.size();
-				for(int i = 0; i < n; i++)
-					counter_occurence[genes[i]]++;
+				for(int i=0; i < n; i++)
+				{
+					auto& gene_cov = classification_id[genes[i]];
+					//cout<<genes[i]<<" "<<gene_cov.first.first<<" + min("<<k<<","<<pos-gene_cov.second<<") - ";
+					gene_cov.first.first += min(k, pos - gene_cov.second);
+					gene_cov.first.second = 1;
+					gene_cov.second = pos - 1;
+					//cout<<gene_cov.first.first<<" "<<gene_cov.first.second<<" "<<gene_cov.second<<endl;
+				}
 				
 				for (; pos < (int)read_seq.size(); ++pos) 
 				{
 					uint8_t new_char = to_int[read_seq[pos]];
-					if(new_char == 0)  // Found a char different from A, C, G, T
+					if(new_char == 0)
 					{
-						++pos; // we skip this character then we build a new kmer
+						++pos;
 						kmer = build_kmer(read_seq, pos, k);
 						if(kmer == (uint64_t)-1) break;
 						rckmer = revcompl(kmer, k);
-						--pos; // p must point to the ending position of the kmer, it will be incremented by the for
+						--pos;
 					} 
 					else 
 					{
-						--new_char; // A is 1 but it should be 0
+						--new_char;
 						kmer = lsappend(kmer, new_char, k);
 						rckmer = rsprepend(rckmer, reverse_char(new_char), k);
 					}
 					
-				
 					genes = _tree->get_genes(min(kmer, rckmer));
-					n = genes.size();
-					for(int i = 0; i < n; i++)
-						counter_occurence[genes[i]]++;
+					int n = genes.size();
+					for(int i=0; i < n; i++)
+					{
+						auto& gene_cov = classification_id[genes[i]];
+						//cout<<genes[i]<<" "<<gene_cov.first.first<<" + min("<<k<<","<<pos-gene_cov.second<<") /-> ";
+						gene_cov.first.first += min(k, pos - gene_cov.second);
+						gene_cov.first.second += 1;
+						gene_cov.second = pos;
+						//cout<<gene_cov.first.first<<" "<<gene_cov.first.second<<" "<<gene_cov.second<<endl;
+					}
 				}
 			}
 			
-			vector<string> best_genes;
-			int max = -1;
-			for(auto it=counter_occurence.cbegin(); it!=counter_occurence.cend(); ++it)
+			//cout<<endl;
+			unsigned int max = 0;
+			unsigned int maxk = 0;
+			best_genes.clear();
+			for(auto it=classification_id.cbegin(); it!=classification_id.cend(); ++it) 
 			{
-				if(it->second == max)
+				//cout<<it->first<<" "<<it->second.first.first<<" "<<it->second.first.second<<" "<<it->second.second<<endl;
+				
+				if(it->second.first.first == max && it->second.first.second == maxk) 
 				{
 					best_genes.push_back(it->first);
-				}
-				else if(it->second > max)
+				} 
+				else if(it->second.first.first > max || (it->second.first.first == max && it->second.first.second > maxk)) 
 				{
 					best_genes.clear();
-					max = it->second;
+					max = it->second.first.first;
+					maxk = it->second.first.second;
 					best_genes.push_back(it->first);
 				}
 			}
-			if(max >= c*len && (!only_single || best_genes.size() == 1)) 
+			
+			//cout<<"maxk: "<<maxk<<" max: "<<max<<endl;
+			if(maxk >= c*len && (!only_single || best_genes.size() == 1)) 
 				for(const auto idx : best_genes) 
 					associations->push_back({ idx, std::move(get<1>(p)) });
 		}
