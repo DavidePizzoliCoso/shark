@@ -124,7 +124,7 @@ public:
 			}
 			
 			//cout<<"maxk: "<<maxk<<" max: "<<max<<endl;
-			if(maxk >= c*len && (!only_single || best_genes.size() == 1)) 
+			if(max >= c*len && (!only_single || best_genes.size() == 1)) 
 				for(const auto idx : best_genes) 
 					associations->push_back({ idx, std::move(get<1>(p)) });
 		}
