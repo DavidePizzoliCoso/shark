@@ -40,7 +40,7 @@ static const char *USAGE_MESSAGE =
 "      -p, --out2                        second output sample in FASTQ (default: sharked_sample.2)\n"
 "      -k, --kmer-size                   size of the kmers to index (default:17, max:31)\n"
 "      -c, --confidence                  confidence for associating a read to a gene (default:0.6)\n"
-"      -b, --bf-size                     bloom filter size in GB (default:1)\n"
+"      -b, --bf-size                     bloom filter size in Kb (default:1024)\n"
 "      -q, --min-base-quality            minimum base quality (assume FASTQ Illumina 1.8+ Phred scale, default:0, i.e., no filtering)\n"
 "      -s, --single                      report an association only if a single gene is found\n"
 "      -t, --threads                     number of threads (default:1)\n"
@@ -128,9 +128,9 @@ void parse_arguments(int argc, char **argv) {
       }
       break;
     case 'b':
-      // Let's consider this as GB
+      // Let's consider this as Kb
       arg >> opt::bf_size;
-      opt::bf_size = opt::bf_size * ((uint64_t)0b1 << 33);
+      opt::bf_size = opt::bf_size * ((uint64_t)0b1 << 10);
       break;
     case 'q':
       int mq;
