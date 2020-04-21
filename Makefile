@@ -1,4 +1,4 @@
-CFLAGS	= -Wno-char-subscripts -Wall -g3 -O0 -std=c++14 -I. -I./include
+CFLAGS	= -DNDEBUG -march=native -Wno-char-subscripts -Wall -O3 -std=c++14 -I. -I./include
 CXXFLAGS= ${CFLAGS}
 LIBS = -L./lib -lz -lsdsl -ltbb
 

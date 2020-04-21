@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		tbb::filter_t<void, FastqSplitter::output_t*> sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
-		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*> ra(tbb::filter::parallel, ReadAnalyzer(&tree, opt::k, opt::c, opt::single));
+		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*> ra(tbb::filter::parallel, ReadAnalyzer(&tree, opt::k, opt::c, opt::single, opt::method));
 		tbb::filter_t<ReadAnalyzer::output_t*, void> so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
 
 		tbb::filter_t<void, void> pipeline_reads = sr & ra & so;

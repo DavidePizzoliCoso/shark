@@ -44,6 +44,7 @@ static const char *USAGE_MESSAGE =
 "      -q, --min-base-quality            minimum base quality (assume FASTQ Illumina 1.8+ Phred scale, default:0, i.e., no filtering)\n"
 "      -s, --single                      report an association only if a single gene is found\n"
 "      -t, --threads                     number of threads (default:1)\n"
+"      -m, --method                      subject of the condition [base / kmer] (default: base)\n"
 "      -v, --verbose                     verbose mode\n";
 
 namespace opt {
@@ -58,11 +59,12 @@ namespace opt {
   static uint64_t bf_size = ((uint64_t)0b1 << 20);
   static char min_quality = 0;
   static bool single = false;
+  static std::string method = "";
   static bool verbose = false;
   static int nThreads = 1;
 }
 
-static const char *shortopts = "t:r:1:2:o:p:k:c:b:q:svh";
+static const char *shortopts = "t:r:1:2:o:p:k:c:b:q:m:svh";
 
 static const struct option longopts[] = {
   {"reference", required_argument, NULL, 'r'},
@@ -76,6 +78,7 @@ static const struct option longopts[] = {
   {"bf-size", required_argument, NULL, 'b'},
   {"min-base-quality", required_argument, NULL, 'q'},
   {"single", no_argument, NULL, 's'},
+  {"method", no_argument, NULL, 'm'},
   {"verbose", no_argument, NULL, 'v'},
   {"help", no_argument, NULL, 'h'},
   {NULL, 0, NULL, 0}
@@ -145,6 +148,9 @@ void parse_arguments(int argc, char **argv) {
       break;
     case 's':
       opt::single = true;
+      break;
+    case 'm':
+      arg >> opt::method;
       break;
     case 'v':
       opt::verbose = true;

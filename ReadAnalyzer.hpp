@@ -33,8 +33,8 @@ class ReadAnalyzer {
 public:
 	typedef vector<assoc_t> output_t;
 
-	ReadAnalyzer(SSBT *tree, uint _k, double _c, bool _only_single = false) :
-	_tree(tree), k(_k), c(_c), only_single(_only_single) {}
+	ReadAnalyzer(SSBT *tree, uint _k, double _c, bool _only_single = false, std::string _method = "base") :
+	_tree(tree), k(_k), c(_c), only_single(_only_single), method(_method) {}
 
 	output_t* operator()(vector<elem_t> *reads) const 
 	{
@@ -63,7 +63,7 @@ public:
 				for(int i=0; i < n; i++)
 				{
 					auto& gene_cov = classification_id[genes[i]];
-					//cout<<genes[i]<<" "<<gene_cov.first.first<<" + min("<<k<<","<<pos-gene_cov.second<<") - ";
+					//cout<<genes[i]<<" "; // <<gene_cov.first.first<<" + min("<<k<<","<<pos-gene_cov.second<<") - ";
 					gene_cov.first.first += min(k, pos - gene_cov.second);
 					gene_cov.first.second = 1;
 					gene_cov.second = pos - 1;
@@ -93,7 +93,7 @@ public:
 					for(int i=0; i < n; i++)
 					{
 						auto& gene_cov = classification_id[genes[i]];
-						//cout<<genes[i]<<" "<<gene_cov.first.first<<" + min("<<k<<","<<pos-gene_cov.second<<") /-> ";
+						//cout<<genes[i]<<" "; // <<gene_cov.first.first<<" + min("<<k<<","<<pos-gene_cov.second<<") /-> ";
 						gene_cov.first.first += min(k, pos - gene_cov.second);
 						gene_cov.first.second += 1;
 						gene_cov.second = pos;
@@ -103,30 +103,54 @@ public:
 			}
 			
 			//cout<<endl;
-			unsigned int max = 0;
 			unsigned int maxk = 0;
+			unsigned int max = 0;
 			best_genes.clear();
-			for(auto it=classification_id.cbegin(); it!=classification_id.cend(); ++it) 
+			//cout<<method<<endl;
+			if(method == "kmer")
 			{
-				//cout<<it->first<<" "<<it->second.first.first<<" "<<it->second.first.second<<" "<<it->second.second<<endl;
-				
-				if(it->second.first.first == max && it->second.first.second == maxk) 
+				for(auto it=classification_id.cbegin(); it!=classification_id.cend(); ++it) 
 				{
-					best_genes.push_back(it->first);
-				} 
-				else if(it->second.first.first > max || (it->second.first.first == max && it->second.first.second > maxk)) 
-				{
-					best_genes.clear();
-					max = it->second.first.first;
-					maxk = it->second.first.second;
-					best_genes.push_back(it->first);
+					//cout<<it->first<<" "<<it->second.first.first<<" "<<it->second.first.second<<" "<<it->second.second<<endl;
+					if(it->second.first.second == maxk) 
+					{
+						best_genes.push_back(it->first);
+					} 
+					else if(it->second.first.second > maxk)
+					{
+						best_genes.clear();
+						maxk = it->second.first.second;
+						best_genes.push_back(it->first);
+					}
 				}
+				//cout<<"maxk: "<<maxk<<endl;
+				if(maxk >= c*(len-k+1) && (!only_single || best_genes.size() == 1)) 
+					for(const auto idx : best_genes) 
+						associations->push_back({ idx, std::move(get<1>(p)) });
+			}
+			else
+			{
+				for(auto it=classification_id.cbegin(); it!=classification_id.cend(); ++it) 
+				{
+					//cout<<it->first<<" "<<it->second.first.first<<" "<<it->second.first.second<<" "<<it->second.second<<endl;
+					if(it->second.first.first == max && it->second.first.second == maxk) 
+					{
+						best_genes.push_back(it->first);
+					} 
+					else if(it->second.first.first > max || (it->second.first.first == max && it->second.first.second > maxk)) 
+					{
+						best_genes.clear();
+						max = it->second.first.first;
+						maxk = it->second.first.second;
+						best_genes.push_back(it->first);
+					}
+				}
+				//cout<<"maxk: "<<maxk<<" max: "<<max<<endl;
+				if(max >= c*len && (!only_single || best_genes.size() == 1)) 
+					for(const auto idx : best_genes) 
+						associations->push_back({ idx, std::move(get<1>(p)) });
 			}
 			
-			//cout<<"maxk: "<<maxk<<" max: "<<max<<endl;
-			if(max >= c*len && (!only_single || best_genes.size() == 1)) 
-				for(const auto idx : best_genes) 
-					associations->push_back({ idx, std::move(get<1>(p)) });
 		}
 		delete reads;
 	
@@ -144,6 +168,7 @@ private:
 	const uint k;
 	const double c;
 	const bool only_single;
+	const std::string method;
 
 };
 
