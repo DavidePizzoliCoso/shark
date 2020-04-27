@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 		kseq_t *refseq = kseq_init(ref_file);
 		
 		tbb::filter_t<void, vector<pair<string, string>>*> tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
-		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<uint64_t>>>*> kb(tbb::filter::parallel, KmerBuilder(opt::k));
+		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<uint64_t>>>*> kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size));
 		tbb::filter_t<vector<pair<string,vector<uint64_t>>>*, void> bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree));
 
 		tbb::filter_t<void, void> pipeline = tr & kb & bff;
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 	/****************************************************************************/
 
 	/*** 2. Iteration over the sample *****************************************/
-  
+	
 	{
 		kseq_t *sseq1 = nullptr, *sseq2 = nullptr;
 		FILE *out1 = nullptr, *out2 = nullptr;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 	}
 	
 	pelapsed("Sample completed");
-
+	
 	/****************************************************************************/
 	
 	pelapsed("Association done");

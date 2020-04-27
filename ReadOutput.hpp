@@ -33,6 +33,7 @@ public:
   { }
 
   void operator()(std::vector<assoc_t> *associations) const {
+	  
     if(associations) {
       string previd = "";
       for(const auto & a : *associations) {
@@ -47,6 +48,7 @@ public:
       }
       delete associations;
     }
+	
   }
 
 private:

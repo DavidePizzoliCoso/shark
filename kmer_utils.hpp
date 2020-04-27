@@ -78,8 +78,9 @@ inline uint64_t rsprepend(const uint64_t kmer, const uint64_t c, const uint64_t 
   return (kmer >> 2) | (c << (2*k - 2));
 }
 
-inline uint64_t  _get_hash(const uint64_t& kmer) {
-  return xxh::xxhash<64>(&kmer, sizeof(uint64_t), 0);
+inline vector<uint64_t>  _get_hash(const uint64_t& kmer) {
+  // return { static_cast<uint64_t>(std::hash<unsigned long long>(&kmer) % sizeof(uint64_t)) };
+  return { xxh::xxhash<64>(&kmer, sizeof(uint64_t), 0), xxh::xxhash<64>(&kmer, sizeof(uint64_t), 100) };
 }
 
 

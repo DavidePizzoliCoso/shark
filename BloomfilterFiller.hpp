@@ -41,15 +41,22 @@ public:
 	{
 		list<SimpleBF*> coda;
 		SimpleBF* bloom;
+		//int counter, sum = 0;
 		for(const auto & gene : *genes) 
 		{
+			//counter = 0;
 			bloom = new SimpleBF(sbt->_size, gene.first);
 			for(const auto position : gene.second)
+			{
 				bloom->add_at(position % sbt->_size);
+				//counter++;
+			}
+			//cout<<gene.first<<" "<<counter<<endl;
+			//sum += counter;
 			coda.push_back(bloom);
 		}
 		delete genes;
-		
+		//cout<<"Somma: "<<sum<<endl;
 		int i = 0;
 		while (coda.size() > 1)
 		{
@@ -65,7 +72,7 @@ public:
 			coda.push_back(node);
 		}
 		sbt->setRoot(coda.front());
-		// sbt->printTree();
+		//sbt->printTree();
 		
 	}
 

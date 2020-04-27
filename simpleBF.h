@@ -76,19 +76,25 @@ class SimpleBF
 		// Function to add a k-mer to the BF
 		void add_kmer(const kmer_t kmer) 
 		{
-			uint64_t hash = _get_hash(kmer);
-			_bf[hash % _size] = 1;
+			vector<uint64_t> hash = _get_hash(kmer);
+			
+			for(const auto h : hash)
+				_bf[h % _size] = 1;
 		}
 		
 		bool add_to_kmer(const uint64_t &kmer, const int &input_idx) 
 		{
-			uint64_t hash = _get_hash(kmer);
-			size_t bf_idx = hash % _size;
-			if (_bf[bf_idx]) 
-			{
-				return true;
-			}
-			return false;
+			vector<uint64_t> hash = _get_hash(kmer);
+			vector<size_t> bf_idx;
+			
+			bf_idx.clear();
+			for(const auto h : hash)
+				bf_idx.push_back(h % _size);
+			
+			bool flag = true;
+			for(const auto index : bf_idx)
+				flag = _bf[index] && flag;
+			return flag;
 		}
 		
 		pair<index_kmer_t::const_iterator, index_kmer_t::const_iterator> get_index(const kmer_t &kmer) const {

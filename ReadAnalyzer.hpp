@@ -50,7 +50,7 @@ public:
 			unsigned int len = 0;
 			for (unsigned int pos = 0; pos < read_seq.size(); ++pos) 
 				len += to_int[read_seq[pos]] > 0 ? 1 : 0;
-			
+			//cout<<read_seq<<endl;
 			if(len >= k) 
 			{
 				int pos = 0;

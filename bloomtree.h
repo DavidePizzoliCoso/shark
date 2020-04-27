@@ -65,18 +65,31 @@ class SSBT {
 		{
 			list<SimpleBF*> coda;
 			vector<string> genes;
-			uint64_t hash = _get_hash(kmer);
-			size_t bf_idx = hash % _size;
+			vector<uint64_t> hash = _get_hash(kmer);
+			vector<size_t> bf_idx;
+			
+			bf_idx.clear();
+			for(const auto h : hash)
+				bf_idx.push_back(h % _size);
 			
 			coda.push_back(root);
 			genes.clear();
+			//int counter = 0;
 			
 			while(coda.size() > 0)
 			{
 				SimpleBF* node = coda.front();
 				coda.pop_front();
+				//counter++;
+				bool flag = true;
+				for(const auto index : bf_idx)
+				{
+					//cout<<node->_bf[bf_idx.back()]<<" "<<bf_idx.back()<<endl;
+					flag = node->_bf[index] == 1;
+					if(!flag) break;
+				}
 				
-				if (node->_bf[bf_idx])
+				if (flag)
 				{
 					if(node->sx == nullptr && node->dx == nullptr) // This is a leaf
 						genes.push_back(node->_id);
@@ -90,6 +103,8 @@ class SSBT {
 					}
 				}
 			}
+			//if(counter > 1)
+			//	cout<<kmer<<";"<<bf_idx<<";"<<counter<<endl;
 			return genes;
 		}
 		

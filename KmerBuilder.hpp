@@ -35,22 +35,28 @@ using namespace std;
 class KmerBuilder {
 
 public:
-  KmerBuilder(size_t _k) : k(_k) {}
+  KmerBuilder(size_t _k, uint64_t _bf_size) : k(_k), bf_size(_bf_size) {}
 
   vector<pair<string,vector<uint64_t>>>* operator()(vector<pair<string, string>> *texts) const {
     if(texts) {
 	  vector<pair<string,vector<uint64_t>>>* ret = new vector<pair<string,vector<uint64_t>>>();
-      vector<uint64_t> kmer_pos;
+      vector<uint64_t> kmer_pos, support;
       uint64_t kmer, rckmer, key;
       for(const auto & p : *texts) {
 		kmer_pos.clear();
+		//cout<<">Number of elements: "<<p.second.size() - k + 1<<endl;
         if(p.second.size() >= k) {
           int _pos = 0;
           kmer = build_kmer(p.second, _pos, k);
           if(kmer == (uint64_t)-1) continue;
           rckmer = revcompl(kmer, k);
           key = min(kmer, rckmer);
-          kmer_pos.push_back(_get_hash(key));
+          //kmer_pos.push_back(_get_hash(key));
+		  support = _get_hash(key);
+		  kmer_pos.insert(kmer_pos.end(), support.begin(), support.end());
+		  
+		  //cout<<key<<";"<<_get_hash(key) % bf_size<<endl;
+		  
           for (int pos = _pos; pos < (int)p.second.size(); ++pos) {
             uint8_t new_char = to_int[p.second[pos]];
             if(new_char == 0) { // Found a char different from A, C, G, T
@@ -65,10 +71,15 @@ public:
               rckmer = rsprepend(rckmer, reverse_char(new_char), k);
             }
             key = min(kmer, rckmer);
-            kmer_pos.push_back(_get_hash(key));
+            //kmer_pos.push_back(_get_hash(key));
+			support = _get_hash(key);
+			kmer_pos.insert(kmer_pos.end(), support.begin(), support.end());
+			
+		    //cout<<key<<";"<<_get_hash(key) % bf_size<<endl;
           }
         }
 		ret->push_back(make_pair(p.first,kmer_pos));
+		//cout<<"="<<endl;
       }
       delete texts;
 	  /*
@@ -82,6 +93,7 @@ public:
 
 private:
   size_t k;
+  uint64_t bf_size;
 };
 
 #endif
