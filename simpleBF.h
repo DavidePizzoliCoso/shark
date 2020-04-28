@@ -57,9 +57,9 @@ class SimpleBF
 		typedef int_vector<16> index_kmer_t;
 		
 		// Costruttore
-		SimpleBF(const size_t size, const string& id_gene): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _id(id_gene) {}
+		SimpleBF(const size_t size, const string& id_gene, int nHash): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _id(id_gene), _nHash(nHash) {}
 		
-		SimpleBF(const SimpleBF& x): sx(x.sx), dx(x.dx), _size(x._size), _bf(x._bf), _id(x._id) {}
+		SimpleBF(const SimpleBF& x): sx(x.sx), dx(x.dx), _size(x._size), _bf(x._bf), _id(x._id), _nHash(x._nHash) {}
 		
 		// Distruttore
 		~SimpleBF()
@@ -76,7 +76,7 @@ class SimpleBF
 		// Function to add a k-mer to the BF
 		void add_kmer(const kmer_t kmer) 
 		{
-			vector<uint64_t> hash = _get_hash(kmer);
+			vector<uint64_t> hash = _get_hash(kmer, _nHash);
 			
 			for(const auto h : hash)
 				_bf[h % _size] = 1;
@@ -84,7 +84,7 @@ class SimpleBF
 		
 		bool add_to_kmer(const uint64_t &kmer, const int &input_idx) 
 		{
-			vector<uint64_t> hash = _get_hash(kmer);
+			vector<uint64_t> hash = _get_hash(kmer, _nHash);
 			vector<size_t> bf_idx;
 			
 			bf_idx.clear();
@@ -136,6 +136,7 @@ class SimpleBF
 		bit_vector_t _bf;
 		string _id;
 		index_kmer_t _index_kmer;
+		int _nHash;
 };
 
 #endif

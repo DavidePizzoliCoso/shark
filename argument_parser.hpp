@@ -45,6 +45,7 @@ static const char *USAGE_MESSAGE =
 "      -s, --single                      report an association only if a single gene is found\n"
 "      -t, --threads                     number of threads (default:1)\n"
 "      -m, --method                      subject of the condition [base / kmer] (default: base)\n"
+"      -x, --xxhash                      number of hash functions\n"
 "      -v, --verbose                     verbose mode\n";
 
 namespace opt {
@@ -60,11 +61,12 @@ namespace opt {
   static char min_quality = 0;
   static bool single = false;
   static std::string method = "";
+  static int nHash = 1;
   static bool verbose = false;
   static int nThreads = 1;
 }
 
-static const char *shortopts = "t:r:1:2:o:p:k:c:b:q:m:svh";
+static const char *shortopts = "t:r:1:2:o:p:k:c:b:q:m:x:svh";
 
 static const struct option longopts[] = {
   {"reference", required_argument, NULL, 'r'},
@@ -78,7 +80,8 @@ static const struct option longopts[] = {
   {"bf-size", required_argument, NULL, 'b'},
   {"min-base-quality", required_argument, NULL, 'q'},
   {"single", no_argument, NULL, 's'},
-  {"method", no_argument, NULL, 'm'},
+  {"method", required_argument, NULL, 'm'},
+  {"xxhash", required_argument, NULL, 'x'},
   {"verbose", no_argument, NULL, 'v'},
   {"help", no_argument, NULL, 'h'},
   {NULL, 0, NULL, 0}
@@ -152,6 +155,15 @@ void parse_arguments(int argc, char **argv) {
     case 'm':
       arg >> opt::method;
       break;
+    case 'x':
+      arg >> opt::nHash;
+      if(opt::nHash <= 0) {
+        std::cerr << "USAGE_MESSAGE";
+        std::cerr << "shark: at least 1 hash function is required." << std::endl
+                  << "aborting..." << std::endl;
+        exit(EXIT_FAILURE);
+      }
+	  break;
     case 'v':
       opt::verbose = true;
       break;

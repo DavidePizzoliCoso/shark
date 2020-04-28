@@ -61,11 +61,11 @@ class SSBT {
 			root = node;
 		}
 		
-		vector<string> get_genes(const kmer_t &kmer) const 
+		vector<string> get_genes(const kmer_t &kmer, const int nHash) const 
 		{
 			list<SimpleBF*> coda;
 			vector<string> genes;
-			vector<uint64_t> hash = _get_hash(kmer);
+			vector<uint64_t> hash = _get_hash(kmer, nHash);
 			vector<size_t> bf_idx;
 			
 			bf_idx.clear();
@@ -74,17 +74,15 @@ class SSBT {
 			
 			coda.push_back(root);
 			genes.clear();
-			//int counter = 0;
-			
+			//int counter = 0; // FASE 2
 			while(coda.size() > 0)
 			{
 				SimpleBF* node = coda.front();
 				coda.pop_front();
-				//counter++;
+				//counter++; // FASE 2
 				bool flag = true;
 				for(const auto index : bf_idx)
 				{
-					//cout<<node->_bf[bf_idx.back()]<<" "<<bf_idx.back()<<endl;
 					flag = node->_bf[index] == 1;
 					if(!flag) break;
 				}
@@ -103,8 +101,15 @@ class SSBT {
 					}
 				}
 			}
-			//if(counter > 1)
-			//	cout<<kmer<<";"<<bf_idx<<";"<<counter<<endl;
+			/*
+			if(genes.size() > 0) // Inizio - FASE 2
+			{
+				cout<<kmer<<";";
+				for(const auto index : bf_idx)
+					cout<<index<<"|";
+				cout<<";"<<counter<<endl;
+			} // Fine - FASE 2
+			*/
 			return genes;
 		}
 		
@@ -135,7 +140,6 @@ class SSBT {
 		
 		SimpleBF* root;
 		size_t _size;
-		
 };
 
 #endif

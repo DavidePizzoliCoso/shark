@@ -35,28 +35,24 @@ using namespace std;
 
 class BloomfilterFiller {
 public:
-	BloomfilterFiller(SSBT *_sbt) : sbt(_sbt) {}
+	BloomfilterFiller(SSBT *_sbt, int _nHash) : sbt(_sbt), nHash(_nHash) {}
 
 	void operator()(vector<pair<string,vector<uint64_t>>> *genes) const 
 	{
 		list<SimpleBF*> coda;
 		SimpleBF* bloom;
-		//int counter, sum = 0;
+		
 		for(const auto & gene : *genes) 
 		{
-			//counter = 0;
-			bloom = new SimpleBF(sbt->_size, gene.first);
+			bloom = new SimpleBF(sbt->_size, gene.first, nHash);
 			for(const auto position : gene.second)
 			{
 				bloom->add_at(position % sbt->_size);
-				//counter++;
 			}
-			//cout<<gene.first<<" "<<counter<<endl;
-			//sum += counter;
 			coda.push_back(bloom);
 		}
 		delete genes;
-		//cout<<"Somma: "<<sum<<endl;
+		
 		int i = 0;
 		while (coda.size() > 1)
 		{
@@ -65,7 +61,7 @@ public:
 			SimpleBF* dx = coda.front();
 			coda.pop_front();
 			
-			SimpleBF* node = new SimpleBF(sbt->_size, "NODO 00000" + to_string(++i));
+			SimpleBF* node = new SimpleBF(sbt->_size, "NODO 00000" + to_string(++i), nHash);
 			node->setSxChild(sx);
 			node->setDxChild(dx);
 			node->setBF(sx, dx);
@@ -78,5 +74,6 @@ public:
 
 private:
 	SSBT* sbt;
+	int nHash;
 };
 #endif
