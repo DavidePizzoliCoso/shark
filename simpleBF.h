@@ -114,8 +114,8 @@ class SimpleBF
 		
 		void setBF(SimpleBF* A, SimpleBF* B)
 		{
-			for(size_t i=0; i < _size; i++)
-				_bf[i] = A->_bf[i] || B->_bf[i];
+			for(size_t i=0; i < _size; i+=64)
+				_bf.set_int(i, A->_bf.get_int(i,64) | B->_bf.get_int(i,64));
 			
 		}
 		

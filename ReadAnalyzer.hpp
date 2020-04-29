@@ -58,7 +58,7 @@ public:
 				if(kmer == (uint64_t)-1) continue;
 				uint64_t rckmer = revcompl(kmer, k);
 				
-				auto genes = _tree->get_genes(min(kmer, rckmer), _nHash);
+				auto genes = _tree->get_genes(min(kmer, rckmer), _nHash, 0);
 				int n = genes.size();
 				for(int i=0; i < n; i++)
 				{
@@ -86,7 +86,7 @@ public:
 						rckmer = rsprepend(rckmer, reverse_char(new_char), k);
 					}
 					
-					genes = _tree->get_genes(min(kmer, rckmer), _nHash);
+					genes = _tree->get_genes(min(kmer, rckmer), _nHash, pos - k + 1);
 					int n = genes.size();
 					for(int i=0; i < n; i++)
 					{

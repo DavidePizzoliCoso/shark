@@ -61,7 +61,7 @@ class SSBT {
 			root = node;
 		}
 		
-		vector<string> get_genes(const kmer_t &kmer, const int nHash) const 
+		vector<string> get_genes(const kmer_t &kmer, const int nHash, const int counterKmer) const 
 		{
 			list<SimpleBF*> coda;
 			vector<string> genes;
@@ -107,7 +107,7 @@ class SSBT {
 				cout<<kmer<<";";
 				for(const auto index : bf_idx)
 					cout<<index<<"|";
-				cout<<";"<<counter<<endl;
+				cout<<";"<<counterKmer<<";"<<counter<<";"<<genes.size()<<endl;
 			} // Fine - FASE 2
 			*/
 			return genes;
