@@ -61,16 +61,10 @@ class SSBT {
 			root = node;
 		}
 		
-		vector<string> get_genes(const kmer_t &kmer, const int nHash, const int counterKmer) const 
+		void get_genes(const kmer_t &kmer, const int nHash, const int counterKmer, list<SimpleBF*> &coda, vector<int> &genes, vector<size_t> &hash) const 
 		{
-			list<SimpleBF*> coda;
-			vector<string> genes;
-			vector<uint64_t> hash = _get_hash(kmer, nHash);
-			vector<size_t> bf_idx;
-			
-			bf_idx.clear();
-			for(const auto h : hash)
-				bf_idx.push_back(h % _size);
+			coda.clear();
+			hash = _get_hash(hash, kmer, nHash, _size);
 			
 			coda.push_back(root);
 			genes.clear();
@@ -81,7 +75,7 @@ class SSBT {
 				coda.pop_front();
 				//counter++; // FASE 2
 				bool flag = true;
-				for(const auto index : bf_idx)
+				for(const auto index : hash)
 				{
 					flag = node->_bf[index] == 1;
 					if(!flag) break;
@@ -110,7 +104,6 @@ class SSBT {
 				cout<<";"<<counterKmer<<";"<<counter<<";"<<genes.size()<<endl;
 			} // Fine - FASE 2
 			*/
-			return genes;
 		}
 		
 		void printTree()

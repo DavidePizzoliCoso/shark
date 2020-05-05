@@ -33,15 +33,19 @@ class ReadAnalyzer {
 public:
 	typedef vector<assoc_t> output_t;
 
-	ReadAnalyzer(SSBT *tree, uint _k, double _c, bool _only_single = false, std::string _method = "base", int nHash = 1) :
-	_tree(tree), k(_k), c(_c), only_single(_only_single), method(_method), _nHash(nHash) {}
+	ReadAnalyzer(SSBT *tree, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false, std::string _method = "base", int nHash = 1) :
+	_tree(tree), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single), method(_method), _nHash(nHash) {}
 
 	output_t* operator()(vector<elem_t> *reads) const 
 	{
 		output_t* associations = new output_t();
-		vector<string> best_genes;
+		vector<int> best_genes;
 		typedef pair<pair<unsigned int, unsigned int>, unsigned int> gene_cov_t;
-		map<string, gene_cov_t> classification_id;
+		map<int, gene_cov_t> classification_id;
+		
+		list<SimpleBF*> coda_tree;
+		vector<int> genes_tree;
+		vector<size_t> hash_tree;
 		
 		for(const auto & p : *reads) 
 		{
@@ -58,11 +62,11 @@ public:
 				if(kmer == (uint64_t)-1) continue;
 				uint64_t rckmer = revcompl(kmer, k);
 				
-				auto genes = _tree->get_genes(min(kmer, rckmer), _nHash, 0);
-				int n = genes.size();
+				_tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree, genes_tree, hash_tree);
+				int n = genes_tree.size();
 				for(int i=0; i < n; i++)
 				{
-					auto& gene_cov = classification_id[genes[i]];
+					auto& gene_cov = classification_id[genes_tree[i]];
 					gene_cov.first.first += min(k, pos - gene_cov.second);
 					gene_cov.first.second = 1;
 					gene_cov.second = pos - 1;
@@ -86,11 +90,11 @@ public:
 						rckmer = rsprepend(rckmer, reverse_char(new_char), k);
 					}
 					
-					genes = _tree->get_genes(min(kmer, rckmer), _nHash, pos - k + 1);
-					int n = genes.size();
+					_tree->get_genes(min(kmer, rckmer), _nHash, pos - k + 1, coda_tree, genes_tree, hash_tree);
+					int n = genes_tree.size();
 					for(int i=0; i < n; i++)
 					{
-						auto& gene_cov = classification_id[genes[i]];
+						auto& gene_cov = classification_id[genes_tree[i]];
 						gene_cov.first.first += min(k, pos - gene_cov.second);
 						gene_cov.first.second += 1;
 						gene_cov.second = pos;
@@ -120,7 +124,7 @@ public:
 				}
 				if(maxk >= c*(len-k+1) && (!only_single || best_genes.size() == 1)) 
 					for(const auto idx : best_genes) 
-						associations->push_back({ idx, std::move(get<1>(p)) });
+						associations->push_back({ legend_ID[idx], std::move(get<1>(p)) });
 			}
 			else
 			{
@@ -140,7 +144,7 @@ public:
 				}
 				if(max >= c*len && (!only_single || best_genes.size() == 1)) 
 					for(const auto idx : best_genes) 
-						associations->push_back({ idx, std::move(get<1>(p)) });
+						associations->push_back({ legend_ID[idx], std::move(get<1>(p)) });
 			}
 			
 			// IF (FASE 2) COMMENT UNTIL HERE
@@ -158,6 +162,7 @@ public:
 
 private:
 	SSBT * const _tree;
+	const vector<string>& legend_ID;
 	const uint k;
 	const double c;
 	const bool only_single;

@@ -37,23 +37,25 @@ class BloomfilterFiller {
 public:
 	BloomfilterFiller(SSBT *_sbt, int _nHash) : sbt(_sbt), nHash(_nHash) {}
 
-	void operator()(vector<pair<string,vector<uint64_t>>> *genes) const 
+	void operator()(vector<pair<string,vector<size_t>>> *genes) const 
 	{
 		list<SimpleBF*> coda;
 		SimpleBF* bloom;
+		int i = 0;
 		
 		for(const auto & gene : *genes) 
 		{
-			bloom = new SimpleBF(sbt->_size, gene.first, nHash);
+			bloom = new SimpleBF(sbt->_size, i, nHash);
+			
 			for(const auto position : gene.second)
 			{
-				bloom->add_at(position % sbt->_size);
+				bloom->add_at(position);
 			}
 			coda.push_back(bloom);
+			++i;
 		}
 		delete genes;
 		
-		int i = 0;
 		while (coda.size() > 1)
 		{
 			SimpleBF* sx = coda.front();
@@ -61,7 +63,7 @@ public:
 			SimpleBF* dx = coda.front();
 			coda.pop_front();
 			
-			SimpleBF* node = new SimpleBF(sbt->_size, "NODO 00000" + to_string(++i), nHash);
+			SimpleBF* node = new SimpleBF(sbt->_size, nHash);
 			node->setSxChild(sx);
 			node->setDxChild(dx);
 			node->setBF(sx, dx);

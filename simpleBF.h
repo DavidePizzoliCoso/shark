@@ -57,7 +57,10 @@ class SimpleBF
 		typedef int_vector<16> index_kmer_t;
 		
 		// Costruttore
-		SimpleBF(const size_t size, const string& id_gene, int nHash): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _id(id_gene), _nHash(nHash) {}
+		SimpleBF(const size_t size, const int id_gene, const int nHash): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _id(id_gene), _nHash(nHash) {}
+		
+		// Costruttore
+		SimpleBF(const size_t size, const int nHash): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _nHash(nHash) {}
 		
 		SimpleBF(const SimpleBF& x): sx(x.sx), dx(x.dx), _size(x._size), _bf(x._bf), _id(x._id), _nHash(x._nHash) {}
 		
@@ -74,25 +77,19 @@ class SimpleBF
 		}
 
 		// Function to add a k-mer to the BF
-		void add_kmer(const kmer_t kmer) 
+		void add_kmer(const kmer_t kmer, vector<size_t> &hash) 
 		{
-			vector<uint64_t> hash = _get_hash(kmer, _nHash);
-			
+			hash = _get_hash(hash, kmer, _nHash, _size);
 			for(const auto h : hash)
-				_bf[h % _size] = 1;
+				_bf[h] = 1;
 		}
 		
-		bool add_to_kmer(const uint64_t &kmer, const int &input_idx) 
+		bool add_to_kmer(const uint64_t &kmer, const int &input_idx, vector<size_t> &hash) 
 		{
-			vector<uint64_t> hash = _get_hash(kmer, _nHash);
-			vector<size_t> bf_idx;
-			
-			bf_idx.clear();
-			for(const auto h : hash)
-				bf_idx.push_back(h % _size);
-			
+			hash = _get_hash(hash, kmer, _nHash, _size);
 			bool flag = true;
-			for(const auto index : bf_idx)
+			
+			for(const auto index : hash)
 				flag = _bf[index] && flag;
 			return flag;
 		}
@@ -116,7 +113,6 @@ class SimpleBF
 		{
 			for(size_t i=0; i < _size; i+=64)
 				_bf.set_int(i, A->_bf.get_int(i,64) | B->_bf.get_int(i,64));
-			
 		}
 		
 		void printBF(ostream& out)
@@ -134,7 +130,7 @@ class SimpleBF
 		SimpleBF* dx;
 		size_t _size;
 		bit_vector_t _bf;
-		string _id;
+		int _id;
 		index_kmer_t _index_kmer;
 		int _nHash;
 };

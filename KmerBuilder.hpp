@@ -37,11 +37,13 @@ class KmerBuilder {
 public:
   KmerBuilder(size_t _k, uint64_t _bf_size, int _nHash) : k(_k), bf_size(_bf_size), nHash(_nHash) {}
 
-  vector<pair<string,vector<uint64_t>>>* operator()(vector<pair<string, string>> *texts) const {
+  vector<pair<string,vector<size_t>>>* operator()(vector<pair<string, string>> *texts) const {
     if(texts) {
-	  vector<pair<string,vector<uint64_t>>>* ret = new vector<pair<string,vector<uint64_t>>>();
-      vector<uint64_t> kmer_pos, support;
+	  vector<pair<string,vector<size_t>>>* ret = new vector<pair<string,vector<size_t>>>();
+      vector<uint64_t> kmer_pos;
+	  vector<size_t> hash;
       uint64_t kmer, rckmer, key;
+	  
       for(const auto & p : *texts) {
 		kmer_pos.clear();
 		//cout<<">Number of elements: "<<p.second.size() - k + 1<<endl; // FASE 1
@@ -52,8 +54,9 @@ public:
           rckmer = revcompl(kmer, k);
           key = min(kmer, rckmer);
 		  
-		  support = _get_hash(key, nHash);
-		  kmer_pos.insert(kmer_pos.end(), support.begin(), support.end());
+		  hash = _get_hash(hash, key, nHash, bf_size);
+		  
+		  kmer_pos.insert(kmer_pos.end(), hash.begin(), hash.end());
 		  /*
 		  cout<<key<<";"; // Inizio - FASE 1
 		  for(const auto index : _get_hash(key, nHash))
@@ -75,8 +78,9 @@ public:
             }
             key = min(kmer, rckmer);
 			
-			support = _get_hash(key, nHash);
-			kmer_pos.insert(kmer_pos.end(), support.begin(), support.end());
+			hash = _get_hash(hash, key, nHash, bf_size);
+			  
+			kmer_pos.insert(kmer_pos.end(), hash.begin(), hash.end());
 			/*
 			cout<<key<<";"; // Inizio - FASE 1
 			for(const auto index : _get_hash(key, nHash))
@@ -89,7 +93,6 @@ public:
 		//cout<<"="<<endl; // FASE 1
       }
       delete texts;
-	  
       return ret;
     }
     return NULL;

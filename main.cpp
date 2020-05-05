@@ -102,29 +102,52 @@ int main(int argc, char *argv[]) {
 	/*** 1. First iteration over transcripts ************************************/
 	
 	SSBT tree(opt::bf_size);
+	vector<string> legend_ID;
 	
 	{
 		ref_file = gzopen(opt::fasta_path.c_str(), "r");
 		kseq_t *refseq = kseq_init(ref_file);
 		
-		tbb::filter_t<void, vector<pair<string, string>>*> tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
-		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<uint64_t>>>*> kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size, opt::nHash));
-		tbb::filter_t<vector<pair<string,vector<uint64_t>>>*, void> bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash));
+		tbb::filter_t<void, vector<pair<string, string>>*> 
+			tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
+		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*> 
+			kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size, opt::nHash));
+		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void> 
+			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash));
 
 		tbb::filter_t<void, void> pipeline = tr & kb & bff;
 		tbb::parallel_pipeline(opt::nThreads, pipeline);
-
+		
 		kseq_destroy(refseq);
 		gzclose(ref_file);
 	}
 	
 	pelapsed("Transcript file processed");
 	
+	/****************************************************************************/
+
+	/*** 2. Second iteration over transcripts ***********************************/
+  
+	ref_file = gzopen(opt::fasta_path.c_str(), "r");
+	seq = kseq_init(ref_file);
+	int nidx = 0, seq_len;
+	
+	while ((seq_len = kseq_read(seq)) >= 0) 
+	{
+		string input_name = seq->name.s;
+		legend_ID.push_back(input_name);
+		++nidx;
+	}
+	kseq_destroy(seq);
+	gzclose(ref_file);
+  
+	pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+	
 	pelapsed("BF created from transcripts");
 	
 	/****************************************************************************/
 	
-	/*** 2. Iteration over the sample *****************************************/
+	/*** 3. Iteration over the sample *****************************************/
 	// IF (FASE 1) COMMENT FROM HERE
 	
 	{
@@ -141,10 +164,13 @@ int main(int argc, char *argv[]) {
 			if (opt::out2_path != "")
 				out2 = fopen(opt::out2_path.c_str(), "w");
 		}
-
-		tbb::filter_t<void, FastqSplitter::output_t*> sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
-		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*> ra(tbb::filter::parallel, ReadAnalyzer(&tree, opt::k, opt::c, opt::single, opt::method, opt::nHash));
-		tbb::filter_t<ReadAnalyzer::output_t*, void> so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
+		
+		tbb::filter_t<void, FastqSplitter::output_t*> 
+			sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
+		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*> 
+			ra(tbb::filter::parallel, ReadAnalyzer(&tree, legend_ID, opt::k, opt::c, opt::single, opt::method, opt::nHash));
+		tbb::filter_t<ReadAnalyzer::output_t*, void> 
+			so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
 
 		tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
 		tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
