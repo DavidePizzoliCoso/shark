@@ -29,8 +29,6 @@
 #include <sdsl/util.hpp>
 #include <string>
 
-#include <sys/mman.h>
-
 #include "kmer_utils.hpp"
 
 using namespace std;
@@ -40,9 +38,6 @@ class KmerBuilder;
 class BloomfilterFiller;
 class SSBT;
 
-#ifndef SHARK_HUGEPAGESIZE
-#define SHARK_HUGEPAGESIZE (2 * 1024 * 1024)
-#endif
 
 class SimpleBF {
   friend class KmerBuilder;
@@ -53,7 +48,6 @@ public:
   typedef uint64_t kmer_t;
   typedef uint64_t hash_t;
   typedef bit_vector bit_vector_t;
-  typedef int_vector<16> index_kmer_t;
 
   // Costruttore
   SimpleBF(const size_t size, const int id_gene, const int nHash)
@@ -88,11 +82,6 @@ public:
 
   void set_id(int id) { _id = id; }
 
-  void setBF(SimpleBF *A, SimpleBF *B) {
-    for (size_t i = 0; i < _size; i += 64)
-      _bf.set_int(i, A->_bf.get_int(i, 64) | B->_bf.get_int(i, 64));
-  }
-
   SimpleBF() = delete;
 
 private:
@@ -101,7 +90,6 @@ private:
   size_t _size;
   bit_vector_t _bf;
   int _id;
-  index_kmer_t _index_kmer;
   int _nHash;
   bool support;
 };

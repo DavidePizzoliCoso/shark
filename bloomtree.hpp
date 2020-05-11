@@ -25,7 +25,7 @@
 #include "simpleBF.hpp"
 #include <algorithm>
 #include <array>
-#include <list>
+#include <deque>
 #include <string>
 
 #include "kmer_utils.hpp"
@@ -41,7 +41,6 @@ class SSBT {
 
 public:
   typedef uint64_t kmer_t;
-  typedef bit_vector bit_vector_t;
 
   SSBT(const size_t size) : _size(size) {}
 

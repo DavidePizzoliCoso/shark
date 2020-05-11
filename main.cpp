@@ -24,15 +24,13 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <unordered_set>
+#include <map>
+#include <chrono>
 
 #include <zlib.h>
 
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
-#include "sdsl/int_vector.hpp"
-#include "sdsl/util.hpp"
-
 #include "common.hpp"
 #include "argument_parser.hpp"
 #include "bloomtree.hpp"
