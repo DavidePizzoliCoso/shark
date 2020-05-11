@@ -42,18 +42,16 @@ class SimpleBF {
   friend class SSBT;
 
 public:
-  typedef uint64_t kmer_t;
-  typedef uint64_t hash_t;
   typedef vector<bool> bit_vector_t;
 
   // Costruttore
   SimpleBF(const size_t size, const int id_gene, const int nHash)
-      : sx(nullptr), dx(nullptr), _size(size), _bf(size, 0), _id(id_gene),
+      : sx(nullptr), dx(nullptr), _size(size), _bf(size, false), _id(id_gene),
         _nHash(nHash) {}
 
   // Costruttore
   SimpleBF(const size_t size, const int nHash)
-      : sx(nullptr), dx(nullptr), _size(size), _bf(size, 0), _nHash(nHash) {}
+      : sx(nullptr), dx(nullptr), _size(size), _bf(size, false), _nHash(nHash) {}
 
   // Costruttore di copia
   SimpleBF(const SimpleBF &x)
@@ -66,16 +64,11 @@ public:
     delete dx;
   }
 
-  void add_at(const uint64_t p) { _bf[p] = 1; }
+  void add_at(const uint64_t p) { _bf[p] = true; }
 
   void setSxChild(SimpleBF *_sx) { sx = _sx; }
 
   void setDxChild(SimpleBF *_dx) { dx = _dx; }
-
-  void changeBFSize(size_t size) {
-    _size = size;
-    _bf = bit_vector_t(size, 0);
-  }
 
   void set_id(int id) { _id = id; }
 
