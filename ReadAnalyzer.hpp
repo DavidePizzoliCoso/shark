@@ -33,8 +33,8 @@ class ReadAnalyzer {
 public:
 	typedef vector<assoc_t> output_t;
 
-	ReadAnalyzer(SSBT *tree, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false, std::string _method = "base", int nHash = 1) :
-	_tree(tree), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single), method(_method), _nHash(nHash) {}
+	ReadAnalyzer(SSBT *tree, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false, std::string _method = "base", int nHash = 1, bool _diffSizes = false) :
+	_tree(tree), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single), method(_method), _nHash(nHash), diffSizes(_diffSizes) {}
 
 	output_t* operator()(vector<elem_t> *reads) const 
 	{
@@ -43,7 +43,9 @@ public:
 		typedef pair<pair<unsigned int, unsigned int>, unsigned int> gene_cov_t;
 		map<int, gene_cov_t> classification_id;
 		
-		list<SimpleBF*> coda_tree;
+		
+		list<SimpleBF*> coda_tree1;
+		list<pair<SimpleBF*, size_t>> coda_tree2;
 		vector<int> genes_tree;
 		vector<size_t> hash_tree;
 		
@@ -62,7 +64,11 @@ public:
 				if(kmer == (uint64_t)-1) continue;
 				uint64_t rckmer = revcompl(kmer, k);
 				
-				_tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree, genes_tree, hash_tree);
+				if(diffSizes)
+					_tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree2, genes_tree, hash_tree);
+				else
+					_tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree1, genes_tree, hash_tree);
+				
 				int n = genes_tree.size();
 				for(int i=0; i < n; i++)
 				{
@@ -90,7 +96,11 @@ public:
 						rckmer = rsprepend(rckmer, reverse_char(new_char), k);
 					}
 					
-					_tree->get_genes(min(kmer, rckmer), _nHash, pos - k + 1, coda_tree, genes_tree, hash_tree);
+					if(diffSizes)
+						_tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree2, genes_tree, hash_tree);
+					else
+						_tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree1, genes_tree, hash_tree);
+				
 					int n = genes_tree.size();
 					for(int i=0; i < n; i++)
 					{
@@ -168,6 +178,7 @@ private:
 	const bool only_single;
 	const std::string method;
 	int _nHash;
+	bool diffSizes;
 };
 
 #endif

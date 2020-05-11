@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*> 
 			kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size, opt::nHash));
 		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void> 
-			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash));
+			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash, opt::diff_sizes));
 
 		tbb::filter_t<void, void> pipeline = tr & kb & bff;
 		tbb::parallel_pipeline(opt::nThreads, pipeline);
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 		tbb::filter_t<void, FastqSplitter::output_t*> 
 			sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
 		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*> 
-			ra(tbb::filter::parallel, ReadAnalyzer(&tree, legend_ID, opt::k, opt::c, opt::single, opt::method, opt::nHash));
+			ra(tbb::filter::parallel, ReadAnalyzer(&tree, legend_ID, opt::k, opt::c, opt::single, opt::method, opt::nHash, opt::diff_sizes));
 		tbb::filter_t<ReadAnalyzer::output_t*, void> 
 			so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
 

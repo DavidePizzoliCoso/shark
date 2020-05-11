@@ -66,9 +66,9 @@ class SSBT {
 			coda.clear();
 			hash = _get_hash(hash, kmer, nHash, _size);
 			
-			coda.push_back(root);
 			genes.clear();
 			//int counter = 0; // FASE 2
+			coda.push_back(root);
 			while(coda.size() > 0)
 			{
 				SimpleBF* node = coda.front();
@@ -106,16 +106,63 @@ class SSBT {
 			*/
 		}
 		
+		void get_genes(const kmer_t &kmer, const int nHash, const int counterKmer, list<pair<SimpleBF*, size_t>> &coda, vector<int> &genes, vector<size_t> &hash) const 
+		{
+			coda.clear();
+			hash = _get_hash(hash, kmer, nHash, _size);
+			size_t mask = _size - 1, dinamic_mask;
+			genes.clear();
+			//int counter = 0; // FASE 2
+			coda.push_back(make_pair(root, mask));
+			while(coda.size() > 0)
+			{
+				SimpleBF* node = coda.front().first;
+				dinamic_mask = coda.front().second;
+				coda.pop_front();
+				//counter++; // FASE 2
+				bool flag = true;
+				for(const auto index : hash)
+				{
+					flag = node->_bf[index & dinamic_mask] == 1;
+					if(!flag) break;
+				}
+				
+				if (flag)
+				{
+					if(node->sx == nullptr && node->dx == nullptr) // This is a leaf
+						genes.push_back(node->_id);
+					else // This is a node
+					{
+						if(node->sx != nullptr)
+							coda.push_back(make_pair(node->sx, dinamic_mask >> (1 + node->sx->support)));
+						
+						if(node->dx != nullptr)
+							coda.push_back(make_pair(node->dx, dinamic_mask >> (1 + node->dx->support)));
+					}
+				}
+			}
+			/*
+			if(genes.size() > 0) // Inizio - FASE 2
+			{
+				cout<<kmer<<";";
+				for(const auto index : bf_idx)
+					cout<<index<<"|";
+				cout<<";"<<counterKmer<<";"<<counter<<";"<<genes.size()<<endl;
+			} // Fine - FASE 2
+			*/
+		}
+		
 		void printTree()
 		{
 			list<SimpleBF*> coda;
 			
 			coda.push_back(root);
-			
+			int i = 0;
 			while(coda.size() > 0)
 			{
 				SimpleBF* node = coda.front();
 				coda.pop_front();
+				cout<<i++<<" ";
 				node->printBF(cout);
 				
 				if(node->sx != nullptr)

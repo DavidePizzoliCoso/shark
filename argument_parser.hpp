@@ -46,6 +46,7 @@ static const char *USAGE_MESSAGE =
 "      -t, --threads                     number of threads (default:1)\n"
 "      -m, --method                      subject of the condition [base / kmer] (default: base)\n"
 "      -x, --xxhash                      number of hash functions\n"
+"      -y, --diff-sizes                  use filter of different sizes for each node (the size set refers to the root)\n"
 "      -v, --verbose                     verbose mode\n";
 
 namespace opt {
@@ -62,11 +63,12 @@ namespace opt {
   static bool single = false;
   static std::string method = "";
   static int nHash = 1;
+  static bool diff_sizes = false;
   static bool verbose = false;
   static int nThreads = 1;
 }
 
-static const char *shortopts = "t:r:1:2:o:p:k:c:b:q:m:x:svh";
+static const char *shortopts = "t:r:1:2:o:p:k:c:b:q:m:x:y:svh";
 
 static const struct option longopts[] = {
   {"reference", required_argument, NULL, 'r'},
@@ -82,6 +84,7 @@ static const struct option longopts[] = {
   {"single", no_argument, NULL, 's'},
   {"method", required_argument, NULL, 'm'},
   {"xxhash", required_argument, NULL, 'x'},
+  {"diff-sizes", no_argument, NULL, 'y'},
   {"verbose", no_argument, NULL, 'v'},
   {"help", no_argument, NULL, 'h'},
   {NULL, 0, NULL, 0}
@@ -164,6 +167,9 @@ void parse_arguments(int argc, char **argv) {
         exit(EXIT_FAILURE);
       }
 	  break;
+    case 'y':
+      opt::diff_sizes = true;
+      break;
     case 'v':
       opt::verbose = true;
       break;

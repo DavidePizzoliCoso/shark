@@ -62,6 +62,7 @@ class SimpleBF
 		// Costruttore
 		SimpleBF(const size_t size, const int nHash): sx(nullptr), dx(nullptr), _size(size), _bf(size,0), _nHash(nHash) {}
 		
+		// Costruttore di copia
 		SimpleBF(const SimpleBF& x): sx(x.sx), dx(x.dx), _size(x._size), _bf(x._bf), _id(x._id), _nHash(x._nHash) {}
 		
 		// Distruttore
@@ -109,6 +110,17 @@ class SimpleBF
 			dx = _dx;
 		}
 		
+		void changeBFSize(size_t size)
+		{
+			_size = size;
+			_bf = bit_vector_t(size,0);
+		}
+		
+		void set_id(int id)
+		{
+			_id = id;
+		}
+		
 		void setBF(SimpleBF* A, SimpleBF* B)
 		{
 			for(size_t i=0; i < _size; i+=64)
@@ -117,7 +129,9 @@ class SimpleBF
 		
 		void printBF(ostream& out)
 		{
-			out << _id << "\t";
+			
+			out << _id << " " << _size << " " << support << "\t";
+			
 			for(size_t i=0; i < _bf.size(); i++)
 				out << (int)_bf[i];
 			out << endl;
@@ -133,6 +147,7 @@ class SimpleBF
 		int _id;
 		index_kmer_t _index_kmer;
 		int _nHash;
+		bool support;
 };
 
 #endif
