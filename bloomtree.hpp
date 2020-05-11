@@ -63,8 +63,9 @@ public:
       coda.pop_front();
       bool flag = true;
       for (const auto index : hash) {
-        flag= node->_bf[index & dinamic_mask];
-        if (!flag) break;
+        flag = node->_bf[index & dinamic_mask];
+        if (!flag)
+          break;
       }
 
       if (flag) {

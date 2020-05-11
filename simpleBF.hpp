@@ -22,65 +22,42 @@
 #ifndef _BLOOM_FILTER_HPP
 #define _BLOOM_FILTER_HPP
 
-#include <algorithm>
-#include <array>
-#include <string>
 #include <vector>
 
 #include "kmer_utils.hpp"
 
-using namespace std;
-
-class KmerBuilder;
-class BloomfilterFiller;
 class SSBT;
 
-
 class SimpleBF {
-  friend class KmerBuilder;
-  friend class BloomfilterFiller;
   friend class SSBT;
 
 public:
-  typedef vector<bool> bit_vector_t;
+  SimpleBF(const size_t size, const int id_gene = -1)
+    : sx(nullptr), dx(nullptr), _bf(size, false), _id(id_gene), support(false) {}
 
-  // Costruttore
-  SimpleBF(const size_t size, const int id_gene, const int nHash)
-      : sx(nullptr), dx(nullptr), _size(size), _bf(size, false), _id(id_gene),
-        _nHash(nHash) {}
+  SimpleBF(SimpleBF *_sx, SimpleBF *_dx)
+      : sx(_sx), dx(_dx), _bf(max(sx->_bf.size(), dx->_bf.size()) * 2, false),
+        _id(-1), support(false) {
+    sx->support = _bf.size() >> 1 != sx->_bf.size();
+    dx->support = _bf.size() >> 1 != dx->_bf.size();
+  }
 
-  // Costruttore
-  SimpleBF(const size_t size, const int nHash)
-      : sx(nullptr), dx(nullptr), _size(size), _bf(size, false), _nHash(nHash) {}
-
-  // Costruttore di copia
-  SimpleBF(const SimpleBF &x)
-      : sx(x.sx), dx(x.dx), _size(x._size), _bf(x._bf), _id(x._id),
-        _nHash(x._nHash) {}
-
-  // Distruttore
   ~SimpleBF() {
     delete sx;
     delete dx;
   }
 
-  void add_at(const uint64_t p) { _bf[p] = true; }
+  void add_at(const uint64_t p) { _bf[p % _bf.size()] = true; }
 
-  void setSxChild(SimpleBF *_sx) { sx = _sx; }
-
-  void setDxChild(SimpleBF *_dx) { dx = _dx; }
-
-  void set_id(int id) { _id = id; }
-
-  SimpleBF() = delete;
+  bool get_support() const { return support; }
 
 private:
+  typedef std::vector<bool> bit_vector_t;
+
   SimpleBF *sx;
   SimpleBF *dx;
-  size_t _size;
   bit_vector_t _bf;
   int _id;
-  int _nHash;
   bool support;
 };
 

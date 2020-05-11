@@ -40,14 +40,11 @@ public:
     if (texts) {
       vector<pair<string, vector<size_t>>> *ret =
           new vector<pair<string, vector<size_t>>>();
-      vector<uint64_t> kmer_pos;
       vector<size_t> hash(nHash);
       uint64_t kmer, rckmer, key;
 
       for (const auto &p : *texts) {
-        kmer_pos.clear();
-        // cout<<">Number of elements: "<<p.second.size() - k + 1<<endl; // FASE
-        // 1
+        vector<uint64_t> kmer_pos;
         if (p.second.size() >= k) {
           int _pos = 0;
           kmer = build_kmer(p.second, _pos, k);
@@ -81,8 +78,7 @@ public:
             kmer_pos.insert(kmer_pos.end(), hash.begin(), hash.end());
           }
         }
-        ret->push_back(make_pair(p.first, kmer_pos));
-        // cout<<"="<<endl; // FASE 1
+        ret->emplace_back(p.first, std::move(kmer_pos));
       }
       delete texts;
       return ret;

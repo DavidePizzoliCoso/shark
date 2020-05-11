@@ -25,7 +25,7 @@
 #include "bloomtree.hpp"
 #include "simpleBF.hpp"
 #include <cmath>
-#include <list>
+#include <deque>
 #include <memory>
 #include <string>
 #include <vector>
@@ -41,50 +41,41 @@ public:
     SimpleBF *bloom;
     int i = 0;
 
-    list<pair<SimpleBF *, vector<int> *>> coda;
+    deque<pair<SimpleBF *, vector<int>>> coda;
     coda.clear();
-    vector<int> *indexes;
     int levels = ceil(log2(genes->size()));
     size_t dinamic_size = sbt->_size >> levels;
 
     for (const auto &gene : *genes) {
-      bloom = new SimpleBF(dinamic_size, i, nHash);
+      bloom = new SimpleBF(dinamic_size, i);
       // bloom->support = {i};
 
       for (const auto position : gene.second)
-        bloom->add_at(position % dinamic_size);
-      coda.push_back(make_pair(bloom, new vector<int>{i}));
+        bloom->add_at(position);
+      coda.push_back(make_pair(bloom, vector<int>({i})));
       ++i;
     }
 
     while (coda.size() > 1) {
       SimpleBF *sx = coda.front().first;
-      indexes = coda.front().second;
+      vector<int> indexes(std::move(coda.front().second));
       coda.pop_front();
 
       SimpleBF *dx = coda.front().first;
-      indexes->insert(indexes->end(), coda.front().second->begin(),
-                      coda.front().second->end());
-      delete coda.front().second;
+      indexes.insert(indexes.end(), coda.front().second.begin(),
+                     coda.front().second.end());
       coda.pop_front();
 
-      SimpleBF *node = new SimpleBF(max(sx->_size, dx->_size) << 1, -1, nHash);
-      node->setSxChild(sx);
-      node->setDxChild(dx);
-
-      sx->support = (node->_size >> 1 != sx->_size);
-      dx->support = (node->_size >> 1 != dx->_size);
-
-      for (const auto &index : *indexes)
+      SimpleBF *node = new SimpleBF(sx, dx);
+      for (const auto index : indexes)
         for (const auto position : (*genes)[index].second)
-          node->add_at(position % node->_size);
+          node->add_at(position);
 
       coda.push_back(make_pair(node, indexes));
     }
 
     sbt->setRoot(coda.front().first);
 
-    delete coda.front().second;
     delete genes;
   }
 
