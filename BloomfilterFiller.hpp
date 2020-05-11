@@ -62,10 +62,12 @@ public:
       SimpleBF *sx = coda.front().first;
       indexes->insert(indexes->end(), coda.front().second->begin(),
                       coda.front().second->end());
+      delete coda.front().second;
       coda.pop_front();
       SimpleBF *dx = coda.front().first;
       indexes->insert(indexes->end(), coda.front().second->begin(),
                       coda.front().second->end());
+      delete coda.front().second;
       coda.pop_front();
 
       SimpleBF *node = new SimpleBF(max(sx->_size, dx->_size) << 1, -1, nHash);
