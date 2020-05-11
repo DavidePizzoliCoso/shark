@@ -58,12 +58,10 @@ public:
     }
 
     while (coda.size() > 1) {
-      indexes = new vector<int>();
       SimpleBF *sx = coda.front().first;
-      indexes->insert(indexes->end(), coda.front().second->begin(),
-                      coda.front().second->end());
-      delete coda.front().second;
+      indexes = coda.front().second;
       coda.pop_front();
+
       SimpleBF *dx = coda.front().first;
       indexes->insert(indexes->end(), coda.front().second->begin(),
                       coda.front().second->end());
@@ -86,6 +84,7 @@ public:
 
     sbt->setRoot(coda.front().first);
 
+    delete coda.front().second;
     delete genes;
   }
 
