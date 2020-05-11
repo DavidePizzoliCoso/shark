@@ -58,7 +58,7 @@ public:
     genes.clear();
 
     coda.push_back(make_pair(root, mask));
-    while (coda.size() > 0) {
+    while (!coda.empty()) {
       SimpleBF *node = coda.front().first;
       dinamic_mask = coda.front().second;
       coda.pop_front();
