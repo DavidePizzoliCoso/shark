@@ -22,116 +22,73 @@
 #ifndef BF_FILLER_HPP
 #define BF_FILLER_HPP
 
-#include "kseq.h"
-#include <zlib.h>
-#include <string>
-#include <vector>
+#include "bloomtree.hpp"
+#include "simpleBF.hpp"
 #include <cmath>
 #include <list>
 #include <memory>
-#include "bloomtree.h"
-#include "simpleBF.h"
+#include <string>
+#include <vector>
 
 using namespace std;
 
 class BloomfilterFiller {
 public:
-	BloomfilterFiller(SSBT *_sbt, int _nHash, bool _diffSizes) : sbt(_sbt), nHash(_nHash), diffSizes(_diffSizes) {}
+  BloomfilterFiller(SSBT *_sbt, int _nHash)
+      : sbt(_sbt), nHash(_nHash) {}
 
-	void operator()(vector<pair<string,vector<size_t>>> *genes) const 
-	{
-		SimpleBF* bloom;
-		int i = 0;
-		
-		if(diffSizes)
-		{
-			list<pair<SimpleBF*, vector<int>*>> coda;
-			coda.clear();
-			vector<int>* indexes;
-			int levels = ceil(log2(genes->size()));
-			size_t dinamic_size = sbt->_size >> levels;
-			
-			for(const auto & gene : *genes) 
-			{
-				bloom = new SimpleBF(dinamic_size, i, nHash);
-				// bloom->support = {i};
-				
-				for(const auto position : gene.second)
-					bloom->add_at(position % dinamic_size);
-				coda.push_back(make_pair(bloom, new vector<int> {i}));
-				++i;
-			}
-			
-			while (coda.size() > 1)
-			{
-				indexes = new vector<int>();
-				SimpleBF* sx = coda.front().first;
-				indexes->insert(indexes->end(), coda.front().second->begin(), coda.front().second->end());
-				coda.pop_front();
-				SimpleBF* dx = coda.front().first;
-				indexes->insert(indexes->end(), coda.front().second->begin(), coda.front().second->end());
-				coda.pop_front();
-				
-				SimpleBF* node = new SimpleBF(max(sx->_size, dx->_size) << 1, -1, nHash);
-				node->setSxChild(sx);
-				node->setDxChild(dx);
-				
-				sx->support = (node->_size >> 1 != sx->_size);
-				dx->support = (node->_size >> 1 != dx->_size);
-				
-				
-				for(const auto & index : *indexes)
-					for(const auto position : (*genes)[index].second)
-						node->add_at(position % node->_size);
-				
-				coda.push_back(make_pair(node, indexes));
-			}
-			
-			sbt->setRoot(coda.front().first);
-			//sbt->printTree();
-			
-			//indexes->clear();
-			delete genes;
-		}
-		else
-		{
-			list<SimpleBF*> coda;
-			coda.clear();
-			
-			for(const auto & gene : *genes) 
-			{
-				bloom = new SimpleBF(sbt->_size, i, nHash);
-				
-				for(const auto position : gene.second)
-				{
-					bloom->add_at(position);
-				}
-				coda.push_back(bloom);
-				++i;
-			}
-			delete genes;
-			
-			while (coda.size() > 1)
-			{
-				SimpleBF* sx = coda.front();
-				coda.pop_front();
-				SimpleBF* dx = coda.front();
-				coda.pop_front();
-				
-				SimpleBF* node = new SimpleBF(sbt->_size, nHash);
-				node->setSxChild(sx);
-				node->setDxChild(dx);
-				node->setBF(sx, dx);
-				coda.push_back(node);
-			}
-			sbt->setRoot(coda.front());
-			//sbt->printTree();
-		}
-	}
+  void operator()(vector<pair<string, vector<size_t>>> *genes) const {
+    SimpleBF *bloom;
+    int i = 0;
+
+    list<pair<SimpleBF *, vector<int> *>> coda;
+    coda.clear();
+    vector<int> *indexes;
+    int levels = ceil(log2(genes->size()));
+    size_t dinamic_size = sbt->_size >> levels;
+
+    for (const auto &gene : *genes) {
+      bloom = new SimpleBF(dinamic_size, i, nHash);
+      // bloom->support = {i};
+
+      for (const auto position : gene.second)
+        bloom->add_at(position % dinamic_size);
+      coda.push_back(make_pair(bloom, new vector<int>{i}));
+      ++i;
+    }
+
+    while (coda.size() > 1) {
+      indexes = new vector<int>();
+      SimpleBF *sx = coda.front().first;
+      indexes->insert(indexes->end(), coda.front().second->begin(),
+                      coda.front().second->end());
+      coda.pop_front();
+      SimpleBF *dx = coda.front().first;
+      indexes->insert(indexes->end(), coda.front().second->begin(),
+                      coda.front().second->end());
+      coda.pop_front();
+
+      SimpleBF *node = new SimpleBF(max(sx->_size, dx->_size) << 1, -1, nHash);
+      node->setSxChild(sx);
+      node->setDxChild(dx);
+
+      sx->support = (node->_size >> 1 != sx->_size);
+      dx->support = (node->_size >> 1 != dx->_size);
+
+      for (const auto &index : *indexes)
+        for (const auto position : (*genes)[index].second)
+          node->add_at(position % node->_size);
+
+      coda.push_back(make_pair(node, indexes));
+    }
+
+    sbt->setRoot(coda.front().first);
+
+    delete genes;
+  }
 
 private:
-	SSBT* sbt;
-	int nHash;
-	bool diffSizes;
+  SSBT *sbt;
+  const int nHash;
 };
 #endif

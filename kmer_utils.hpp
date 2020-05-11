@@ -78,11 +78,9 @@ inline uint64_t rsprepend(const uint64_t kmer, const uint64_t c, const uint64_t 
   return (kmer >> 2) | (c << (2*k - 2));
 }
 
-inline vector<size_t> _get_hash(vector<size_t> &v, const uint64_t& kmer, const int num, size_t _sz) {
-  v.clear();
-  for(int i=0; i < num; i++)
-	  v.push_back(xxh::xxhash<64>(&kmer, sizeof(uint64_t), i * 100) % _sz);
-  return v;
+inline void _get_hash(vector<size_t> &v, const uint64_t& kmer, const int num, const size_t _sz) {
+  for (int i= 0; i < num; i++)
+	  v[i] = xxh::xxhash<64>(&kmer, sizeof(uint64_t), i * 100) % _sz;
 }
 
 
