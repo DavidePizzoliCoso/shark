@@ -1,6 +1,6 @@
-CFLAGS	= -DNDEBUG -march=native -Wno-char-subscripts -Wall -O3 -std=c++14 -I. -I./include -g3
+CFLAGS	= -DNDEBUG -march=native -Wno-char-subscripts -Wall -O3 -std=c++14 -I. -g3
 CXXFLAGS= ${CFLAGS}
-LIBS = -L./lib -lz -lsdsl -ltbb
+LIBS = -L./lib -lz -ltbb
 
 .PHONY: all clean
 

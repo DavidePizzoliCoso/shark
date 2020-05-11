@@ -24,15 +24,12 @@
 
 #include <algorithm>
 #include <array>
-#include <sdsl/bit_vectors.hpp>
-#include <sdsl/int_vector.hpp>
-#include <sdsl/util.hpp>
 #include <string>
+#include <vector>
 
 #include "kmer_utils.hpp"
 
 using namespace std;
-using namespace sdsl;
 
 class KmerBuilder;
 class BloomfilterFiller;
@@ -47,7 +44,7 @@ class SimpleBF {
 public:
   typedef uint64_t kmer_t;
   typedef uint64_t hash_t;
-  typedef bit_vector bit_vector_t;
+  typedef vector<bool> bit_vector_t;
 
   // Costruttore
   SimpleBF(const size_t size, const int id_gene, const int nHash)
