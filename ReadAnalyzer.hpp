@@ -27,7 +27,7 @@
 #include "kmer_utils.hpp"
 #include <array>
 #include <vector>
-#include <deque>
+#include <map>
 
 using namespace std;
 
@@ -46,7 +46,7 @@ public:
 		map<int, gene_cov_t> classification_id;
 
 
-		deque<pair<SimpleBF*, size_t>> coda_tree;
+		vector<pair<SimpleBF*, size_t>> coda_tree;
 		vector<int> genes_tree;
 		vector<size_t> hash_tree(_nHash);
 

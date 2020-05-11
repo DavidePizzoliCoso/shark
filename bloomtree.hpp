@@ -49,18 +49,18 @@ public:
   void setRoot(SimpleBF *node) { root = node; }
 
   void get_genes(const kmer_t &kmer, const int nHash, const int counterKmer,
-                 deque<pair<SimpleBF *, size_t>> &coda, vector<int> &genes,
+                 vector<pair<SimpleBF *, size_t>> &coda, vector<int> &genes,
                  vector<size_t> &hash) const {
     coda.clear();
     _get_hash(hash, kmer, nHash, _size);
     size_t mask = _size - 1, dinamic_mask;
     genes.clear();
 
-    coda.push_back(make_pair(root, mask));
+    coda.emplace_back(root, mask);
     while (!coda.empty()) {
-      SimpleBF *node = coda.front().first;
-      dinamic_mask = coda.front().second;
-      coda.pop_front();
+      SimpleBF *node = coda.back().first;
+      dinamic_mask = coda.back().second;
+      coda.pop_back();
       bool flag = true;
       for (const auto index : hash) {
         flag = node->_bf[index & dinamic_mask];
@@ -71,10 +71,8 @@ public:
       if (flag) {
         if (node->sx != nullptr) {
           // This is a node
-          coda.push_back(
-              make_pair(node->sx, dinamic_mask >> (1 + node->sx->support)));
-          coda.push_back(
-              make_pair(node->dx, dinamic_mask >> (1 + node->dx->support)));
+          coda.emplace_back(node->sx, dinamic_mask >> (1 + node->sx->support));
+          coda.emplace_back(node->dx, dinamic_mask >> (1 + node->dx->support));
         } else {
           // This is a leaf
           genes.push_back(node->_id);
