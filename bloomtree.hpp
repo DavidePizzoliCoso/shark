@@ -42,43 +42,17 @@ class SSBT {
 public:
   typedef uint64_t kmer_t;
 
+  explicit
   SSBT(const size_t size) : _size(size) {}
 
   ~SSBT() { delete root; }
 
   void setRoot(SimpleBF *node) { root = node; }
 
-  void get_genes(const kmer_t &kmer, const int nHash, const int counterKmer,
-                 vector<pair<SimpleBF *, size_t>> &coda, vector<int> &genes,
-                 vector<size_t> &hash) const {
-    coda.clear();
-    _get_hash(hash, kmer, nHash, _size);
-    size_t mask = _size - 1, dinamic_mask;
+  void get_genes(const kmer_t &kmer, vector<int> &genes, vector<size_t> &hash) const {
     genes.clear();
-
-    coda.emplace_back(root, mask);
-    while (!coda.empty()) {
-      SimpleBF *node = coda.back().first;
-      dinamic_mask = coda.back().second;
-      coda.pop_back();
-      bool flag = true;
-      for (const auto index : hash) {
-        flag = node->_bf[index & dinamic_mask];
-        if (!flag)
-          break;
-      }
-
-      if (flag) {
-        if (node->sx != nullptr) {
-          // This is a node
-          coda.emplace_back(node->sx, dinamic_mask >> (1 + node->sx->support));
-          coda.emplace_back(node->dx, dinamic_mask >> (1 + node->dx->support));
-        } else {
-          // This is a leaf
-          genes.push_back(node->_id);
-        }
-      }
-    }
+    _get_hash(hash, kmer, _size);
+    inner_get_genes(root, _size - 1, hash, genes);
   }
 
   SSBT() = delete;
@@ -86,6 +60,24 @@ public:
   const SSBT &operator=(const SSBT &&) = delete;
 
 private:
+  void inner_get_genes(const SimpleBF *node, const size_t dynamic_mask,
+                       const vector<size_t> &hash, vector<int> &genes) const {
+    for (const auto index : hash) {
+      if (!node->_bf[index & dynamic_mask])
+        return;
+    }
+
+    if (node->sx == nullptr) {
+      // This is a leaf
+      genes.push_back(node->_id);
+    } else {
+      inner_get_genes(node->sx, dynamic_mask >> (1 + node->sx->support), hash,
+                      genes);
+      inner_get_genes(node->dx, dynamic_mask >> (1 + node->dx->support), hash,
+                      genes);
+    }
+  }
+
   SimpleBF *root;
   size_t _size;
 };

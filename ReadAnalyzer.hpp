@@ -35,8 +35,8 @@ class ReadAnalyzer {
 public:
 	typedef vector<assoc_t> output_t;
 
-	ReadAnalyzer(SSBT *tree, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false, std::string _method = "base", int nHash = 1, bool _diffSizes = false) :
-	_tree(tree), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single), method(_method), _nHash(nHash), diffSizes(_diffSizes) {}
+	ReadAnalyzer(SSBT *tree, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false, std::string _method = "base", int nHash = 1) :
+	_tree(tree), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single), method(_method), _nHash(nHash) {}
 
 	output_t* operator()(vector<elem_t> *reads) const
 	{
@@ -46,7 +46,6 @@ public:
 		map<int, gene_cov_t> classification_id;
 
 
-		vector<pair<SimpleBF*, size_t>> coda_tree;
 		vector<int> genes_tree;
 		vector<size_t> hash_tree(_nHash);
 
@@ -65,7 +64,7 @@ public:
 				if(kmer == (uint64_t)-1) continue;
 				uint64_t rckmer = revcompl(kmer, k);
 
-        _tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree, genes_tree, hash_tree);
+        _tree->get_genes(min(kmer, rckmer), genes_tree, hash_tree);
 
 				int n = genes_tree.size();
 				for(int i=0; i < n; i++)
@@ -94,7 +93,7 @@ public:
 						rckmer = rsprepend(rckmer, reverse_char(new_char), k);
 					}
 
-          _tree->get_genes(min(kmer, rckmer), _nHash, 0, coda_tree, genes_tree, hash_tree);
+          _tree->get_genes(min(kmer, rckmer), genes_tree, hash_tree);
 
 					int n = genes_tree.size();
 					for(int i=0; i < n; i++)
@@ -173,7 +172,6 @@ private:
 	const bool only_single;
 	const std::string method;
 	int _nHash;
-	bool diffSizes;
 };
 
 #endif

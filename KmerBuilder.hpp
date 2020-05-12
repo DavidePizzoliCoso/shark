@@ -53,7 +53,7 @@ public:
           rckmer = revcompl(kmer, k);
           key = min(kmer, rckmer);
 
-          _get_hash(hash, key, nHash, bf_size);
+          _get_hash(hash, key, bf_size);
 
           kmer_pos.insert(kmer_pos.end(), hash.begin(), hash.end());
           for (int pos = _pos; pos < (int)p.second.size(); ++pos) {
@@ -73,7 +73,7 @@ public:
             }
             key = min(kmer, rckmer);
 
-            _get_hash(hash, key, nHash, bf_size);
+            _get_hash(hash, key, bf_size);
 
             kmer_pos.insert(kmer_pos.end(), hash.begin(), hash.end());
           }
