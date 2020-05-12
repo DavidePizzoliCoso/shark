@@ -34,53 +34,31 @@ using namespace std;
 
 class BloomfilterFiller {
 public:
-  BloomfilterFiller(SSBT *_sbt, int _nHash)
-      : sbt(_sbt), nHash(_nHash) {}
+  BloomfilterFiller(SSBT *_sbt, int _nHash, int *_cnt, vector<SimpleBF*> &_leaves)
+      : sbt(_sbt), nHash(_nHash), counter(_cnt), leaves(_leaves) {}
 
   void operator()(vector<pair<string, vector<size_t>>> *genes) const {
-    SimpleBF *bloom;
-    int i = 0;
-
-    deque<pair<SimpleBF *, vector<int>>> coda;
-    coda.clear();
-    int levels = ceil(log2(genes->size()));
-    size_t dinamic_size = sbt->_size >> levels;
-
+	  
+    SimpleBF *node;
     for (const auto &gene : *genes) {
-      bloom = new SimpleBF(dinamic_size, i);
-      // bloom->support = {i};
-
-      for (const auto position : gene.second)
-        bloom->add_at(position);
-      coda.push_back(make_pair(bloom, vector<int>({i})));
-      ++i;
-    }
-
-    while (coda.size() > 1) {
-      SimpleBF *sx = coda.front().first;
-      vector<int> indexes(std::move(coda.front().second));
-      coda.pop_front();
-
-      SimpleBF *dx = coda.front().first;
-      indexes.insert(indexes.end(), coda.front().second.begin(),
-                     coda.front().second.end());
-      coda.pop_front();
-
-      SimpleBF *node = new SimpleBF(sx, dx);
-      for (const auto index : indexes)
-        for (const auto position : (*genes)[index].second)
+      node = leaves[*counter];
+	  
+	  while(node)
+	  {
+		for (const auto position : gene.second)
           node->add_at(position);
-
-      coda.push_back(make_pair(node, indexes));
+		
+		node = node->parent;
+	  }
+	  ++*counter;
     }
-
-    sbt->setRoot(coda.front().first);
-
     delete genes;
   }
 
 private:
   SSBT *sbt;
   const int nHash;
+  int *counter;
+  vector<SimpleBF*> &leaves;
 };
 #endif

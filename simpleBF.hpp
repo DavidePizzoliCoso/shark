@@ -30,6 +30,7 @@ class SSBT;
 
 class SimpleBF {
   friend class SSBT;
+  friend class BloomfilterFiller;
 
 public:
   SimpleBF(const size_t size, const int id_gene = -1)
@@ -48,7 +49,9 @@ public:
   }
 
   void add_at(const uint64_t p) { _bf[p % _bf.size()] = true; }
-
+  
+  void set_parent(SimpleBF *p) { parent = p; }
+  
   bool get_support() const { return support; }
 
 private:
@@ -56,6 +59,7 @@ private:
 
   SimpleBF *sx;
   SimpleBF *dx;
+  SimpleBF *parent;
   bit_vector_t _bf;
   int _id;
   bool support;

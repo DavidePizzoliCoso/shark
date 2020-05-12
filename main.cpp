@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
 
 	/*** 1. First iteration over transcripts ***********************************/
   
-	SSBT tree(opt::bf_size);
 	vector<string> legend_ID;
+	
 	ref_file = gzopen(opt::fasta_path.c_str(), "r");
 	seq = kseq_init(ref_file);
 	int nidx = 0, seq_len;
@@ -115,69 +115,42 @@ int main(int argc, char *argv[]) {
 	
 	/****************************************************************************/
 	
+	int i = 0, counter = 0, levels = ceil(log2(nidx)), max_size = opt::bf_size << levels;
+	SSBT tree(max_size);
 	SimpleBF* bloom;
-	int i = 0, counter = 0;
-	dequeue<SimpleBF*> coda;
+	deque<SimpleBF*> coda;
 	coda.clear();
 	
 	for(; i < nidx; i++) 
 	{
-		bloom = new SimpleBF(sbt->_size, i, nHash);
+		bloom = new SimpleBF(opt::bf_size, i);
 		coda.push_back(bloom);
 	}
-	vector<SimpleBF*> leaves(coda);
+	vector<SimpleBF*> leaves;
+	leaves.clear();
+	leaves.insert(leaves.end(), coda.begin(), coda.end());
 		
-	if(diffSizes)
+	while (coda.size() > 1)
 	{
-		while (coda.size() > 1)
-		{
-			SimpleBF* sx = coda.front();
-			coda.pop_front();
-			SimpleBF* dx = coda.front();
-			coda.pop_front();
-			
-			SimpleBF* node = new SimpleBF(max(sx->_size, dx->_size) << 1, -1, nHash);
-			node->setSxChild(sx);
-			node->setDxChild(dx);
-			sx->parent = node;
-			dx->parent = node;
-			
-			sx->support = (node->_size >> 1 != sx->_size);
-			dx->support = (node->_size >> 1 != dx->_size);
-			
-			coda.push_back(make_pair(node, indexes));
-		}
-		tree.setRoot(coda.front().first);
+		SimpleBF* sx = coda.front();
+		coda.pop_front();
+		SimpleBF* dx = coda.front();
+		coda.pop_front();
+		
+		SimpleBF* node = new SimpleBF(sx, dx);
+		sx->set_parent(node);
+		dx->set_parent(node);
+		
+		coda.push_back(node);
 	}
-	else
-	{
-		while (coda.size() > 1)
-		{
-			SimpleBF* sx = coda.front();
-			coda.pop_front();
-			SimpleBF* dx = coda.front();
-			coda.pop_front();
-			
-			SimpleBF* node = new SimpleBF(sbt->_size, -1, nHash);
-			node->setSxChild(sx);
-			node->setDxChild(dx);
-			node->setBF(sx, dx);
-			sx->parent = node;
-			dx->parent = node;
-			
-			coda.push_back(node);
-		}
-		tree.setRoot(coda.front());
-	}
+	coda.front()->set_parent(nullptr);
+	tree.setRoot(coda.front());
 	
 	pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
 	
 	/****************************************************************************/
 	
 	/*** 2. Second iteration over transcripts ************************************/
-
-	SSBT tree(opt::bf_size);
-	vector<string> legend_ID;
 
 	{
 		ref_file = gzopen(opt::fasta_path.c_str(), "r");
@@ -186,9 +159,9 @@ int main(int argc, char *argv[]) {
 		tbb::filter_t<void, vector<pair<string, string>>*>
 			tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
 		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*>
-			kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size, opt::nHash));
+			kb(tbb::filter::parallel, KmerBuilder(opt::k, max_size, opt::nHash));
 		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void>
-			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash));
+			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash, &counter, leaves));
 
 		tbb::filter_t<void, void> pipeline = tr & kb & bff;
 		tbb::parallel_pipeline(opt::nThreads, pipeline);
