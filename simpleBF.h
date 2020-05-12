@@ -110,6 +110,11 @@ class SimpleBF
 			dx = _dx;
 		}
 		
+		void setParent(SimpleBF* _p)
+		{
+			parent = _p;
+		}
+		
 		void changeBFSize(size_t size)
 		{
 			_size = size;
@@ -142,6 +147,7 @@ class SimpleBF
 		
 		SimpleBF* sx;
 		SimpleBF* dx;
+		SimpleBF* parent;
 		size_t _size;
 		bit_vector_t _bf;
 		int _id;

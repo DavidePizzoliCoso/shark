@@ -36,7 +36,7 @@ using namespace std;
 
 class BloomfilterFiller {
 public:
-	BloomfilterFiller(SSBT *_sbt, int _nHash, bool _diffSizes) : sbt(_sbt), nHash(_nHash), diffSizes(_diffSizes) {}
+	BloomfilterFiller(SSBT *_sbt, int _nHash, bool _diffSizes, int c, vector<SimpleBF*> *l) : sbt(_sbt), nHash(_nHash), diffSizes(_diffSizes), counter(c), leaves(l) {}
 
 	void operator()(vector<pair<string,vector<size_t>>> *genes) const 
 	{
@@ -133,5 +133,7 @@ private:
 	SSBT* sbt;
 	int nHash;
 	bool diffSizes;
+	int counter;
+	vector<SimpleBF*> leaves;
 };
 #endif

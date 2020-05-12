@@ -99,35 +99,10 @@ int main(int argc, char *argv[]) {
 	
 	/****************************************************************************/
 
-	/*** 1. First iteration over transcripts ************************************/
-	
+	/*** 1. Second iteration over transcripts ***********************************/
+  
 	SSBT tree(opt::bf_size);
 	vector<string> legend_ID;
-	
-	{
-		ref_file = gzopen(opt::fasta_path.c_str(), "r");
-		kseq_t *refseq = kseq_init(ref_file);
-		
-		tbb::filter_t<void, vector<pair<string, string>>*> 
-			tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
-		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*> 
-			kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size, opt::nHash));
-		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void> 
-			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash, opt::diff_sizes));
-
-		tbb::filter_t<void, void> pipeline = tr & kb & bff;
-		tbb::parallel_pipeline(opt::nThreads, pipeline);
-		
-		kseq_destroy(refseq);
-		gzclose(ref_file);
-	}
-	
-	pelapsed("Transcript file processed");
-	
-	/****************************************************************************/
-
-	/*** 2. Second iteration over transcripts ***********************************/
-  
 	ref_file = gzopen(opt::fasta_path.c_str(), "r");
 	seq = kseq_init(ref_file);
 	int nidx = 0, seq_len;
@@ -140,13 +115,92 @@ int main(int argc, char *argv[]) {
 	}
 	kseq_destroy(seq);
 	gzclose(ref_file);
-  
-	pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
-	
-	pelapsed("BF created from transcripts");
 	
 	/****************************************************************************/
 	
+	SimpleBF* bloom;
+	int i = 0, counter = 0;
+	dequeue<SimpleBF*> coda;
+	coda.clear();
+	
+	for(; i < nidx; i++) 
+	{
+		bloom = new SimpleBF(sbt->_size, i, nHash);
+		coda.push_back(bloom);
+	}
+	vector<SimpleBF*> leaves(coda);
+		
+	if(diffSizes)
+	{
+		while (coda.size() > 1)
+		{
+			SimpleBF* sx = coda.front();
+			coda.pop_front();
+			SimpleBF* dx = coda.front();
+			coda.pop_front();
+			
+			SimpleBF* node = new SimpleBF(max(sx->_size, dx->_size) << 1, -1, nHash);
+			node->setSxChild(sx);
+			node->setDxChild(dx);
+			sx->parent = node;
+			dx->parent = node;
+			
+			sx->support = (node->_size >> 1 != sx->_size);
+			dx->support = (node->_size >> 1 != dx->_size);
+			
+			coda.push_back(make_pair(node, indexes));
+		}
+		tree.setRoot(coda.front().first);
+	}
+	else
+	{
+		while (coda.size() > 1)
+		{
+			SimpleBF* sx = coda.front();
+			coda.pop_front();
+			SimpleBF* dx = coda.front();
+			coda.pop_front();
+			
+			SimpleBF* node = new SimpleBF(sbt->_size, -1, nHash);
+			node->setSxChild(sx);
+			node->setDxChild(dx);
+			node->setBF(sx, dx);
+			sx->parent = node;
+			dx->parent = node;
+			
+			coda.push_back(node);
+		}
+		tree.setRoot(coda.front());
+	}
+	
+	pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+	
+	/****************************************************************************/
+	
+	/*** 2. First iteration over transcripts ************************************/
+	
+	{
+		ref_file = gzopen(opt::fasta_path.c_str(), "r");
+		kseq_t *refseq = kseq_init(ref_file);
+		
+		tbb::filter_t<void, vector<pair<string, string>>*> 
+			tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
+		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*> 
+			kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size, opt::nHash));
+		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void> 
+			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash, opt::diff_sizes, &counter, &leaves));
+
+		tbb::filter_t<void, void> pipeline = tr & kb & bff;
+		tbb::parallel_pipeline(opt::nThreads, pipeline);
+		
+		kseq_destroy(refseq);
+		gzclose(ref_file);
+	}
+	
+	pelapsed("Transcript file processed");
+	
+	/****************************************************************************/
+
 	/*** 3. Iteration over the sample *****************************************/
 	// IF (FASE 1) COMMENT FROM HERE
 	
