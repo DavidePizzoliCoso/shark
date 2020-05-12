@@ -24,19 +24,16 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <unordered_set>
+#include <map>
+#include <chrono>
 
 #include <zlib.h>
 
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
-#include "sdsl/int_vector.hpp"
-#include "sdsl/util.hpp"
-
 #include "common.hpp"
 #include "argument_parser.hpp"
-#include "simpleBF.h"
-#include "bloomtree.h"
+#include "bloomtree.hpp"
 #include "BloomfilterFiller.hpp"
 #include "KmerBuilder.hpp"
 #include "FastaSplitter.hpp"
@@ -76,7 +73,7 @@ int main(int argc, char *argv[]) {
 
 	// Sample 2
 	gzFile read2_file = nullptr;
-	if(opt::paired_flag) 
+	if(opt::paired_flag)
 	{
 		read2_file = gzopen(opt::sample2_path.c_str(), "r");
 		seq = kseq_init(read2_file);
@@ -84,7 +81,7 @@ int main(int argc, char *argv[]) {
 		gzclose(read2_file);
 	}
 
-	if(opt::verbose) 
+	if(opt::verbose)
 	{
 		cerr << "Reference texts: " << opt::fasta_path << endl;
 		cerr << "Sample 1: " << opt::sample1_path << endl;
@@ -96,43 +93,43 @@ int main(int argc, char *argv[]) {
 		cerr << "Minimum base quality: " << static_cast<int>(opt::min_quality) << endl;
 		cerr << endl;
 	}
-	
+
 	/****************************************************************************/
 
 	/*** 1. First iteration over transcripts ************************************/
-	
+
 	SSBT tree(opt::bf_size);
 	vector<string> legend_ID;
-	
+
 	{
 		ref_file = gzopen(opt::fasta_path.c_str(), "r");
 		kseq_t *refseq = kseq_init(ref_file);
-		
-		tbb::filter_t<void, vector<pair<string, string>>*> 
+
+		tbb::filter_t<void, vector<pair<string, string>>*>
 			tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
-		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*> 
+		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*>
 			kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size, opt::nHash));
-		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void> 
-			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash, opt::diff_sizes));
+		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void>
+			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash));
 
 		tbb::filter_t<void, void> pipeline = tr & kb & bff;
 		tbb::parallel_pipeline(opt::nThreads, pipeline);
-		
+
 		kseq_destroy(refseq);
 		gzclose(ref_file);
 	}
-	
+
 	pelapsed("Transcript file processed");
-	
+
 	/****************************************************************************/
 
 	/*** 2. Second iteration over transcripts ***********************************/
-  
+
 	ref_file = gzopen(opt::fasta_path.c_str(), "r");
 	seq = kseq_init(ref_file);
 	int nidx = 0, seq_len;
-	
-	while ((seq_len = kseq_read(seq)) >= 0) 
+
+	while ((seq_len = kseq_read(seq)) >= 0)
 	{
 		string input_name = seq->name.s;
 		legend_ID.push_back(input_name);
@@ -140,16 +137,16 @@ int main(int argc, char *argv[]) {
 	}
 	kseq_destroy(seq);
 	gzclose(ref_file);
-  
+
 	pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
-	
+
 	pelapsed("BF created from transcripts");
-	
+
 	/****************************************************************************/
-	
+
 	/*** 3. Iteration over the sample *****************************************/
 	// IF (FASE 1) COMMENT FROM HERE
-	
+
 	{
 		kseq_t *sseq1 = nullptr, *sseq2 = nullptr;
 		FILE *out1 = nullptr, *out2 = nullptr;
@@ -157,19 +154,19 @@ int main(int argc, char *argv[]) {
 		sseq1 = kseq_init(read1_file);
 		if (opt::out1_path != "")
 			out1 = fopen(opt::out1_path.c_str(), "w");
-		if(opt::paired_flag) 
+		if(opt::paired_flag)
 		{
 			read2_file = gzopen(opt::sample2_path.c_str(), "r");
 			sseq2 = kseq_init(read2_file);
 			if (opt::out2_path != "")
 				out2 = fopen(opt::out2_path.c_str(), "w");
 		}
-		
-		tbb::filter_t<void, FastqSplitter::output_t*> 
+
+		tbb::filter_t<void, FastqSplitter::output_t*>
 			sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
-		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*> 
-			ra(tbb::filter::parallel, ReadAnalyzer(&tree, legend_ID, opt::k, opt::c, opt::single, opt::method, opt::nHash, opt::diff_sizes));
-		tbb::filter_t<ReadAnalyzer::output_t*, void> 
+		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*>
+			ra(tbb::filter::parallel, ReadAnalyzer(&tree, legend_ID, opt::k, opt::c, opt::single, opt::method, opt::nHash));
+		tbb::filter_t<ReadAnalyzer::output_t*, void>
 			so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
 
 		tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
@@ -177,7 +174,7 @@ int main(int argc, char *argv[]) {
 
 		kseq_destroy(sseq1);
 		gzclose(read1_file);
-		if(opt::paired_flag) 
+		if(opt::paired_flag)
 		{
 			kseq_destroy(sseq2);
 			gzclose(read2_file);
@@ -185,13 +182,13 @@ int main(int argc, char *argv[]) {
 		if (out1 != nullptr) fclose(out1);
 		if (out2 != nullptr) fclose(out2);
 	}
-	
+
 	pelapsed("Sample completed");
-	
+
 	// IF (FASE 1) COMMENT UNTIL HERE
 	/****************************************************************************/
-	
+
 	pelapsed("Association done");
-	
+
 	return 0;
 }
