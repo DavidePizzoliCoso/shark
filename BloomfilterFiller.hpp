@@ -38,19 +38,19 @@ public:
       : sbt(_sbt), nHash(_nHash), counter(_cnt), leaves(_leaves) {}
 
   void operator()(vector<pair<string, vector<size_t>>> *genes) const {
-	  
+    
     SimpleBF *node;
     for (const auto &gene : *genes) {
       node = leaves[*counter];
-	  
-	  while(node)
-	  {
-		for (const auto position : gene.second)
+    
+      while(node)
+      {
+        for (const auto position : gene.second)
           node->add_at(position);
-		
-		node = node->parent;
-	  }
-	  ++*counter;
+    
+        node = node->parent;
+      }
+      ++*counter;
     }
     delete genes;
   }

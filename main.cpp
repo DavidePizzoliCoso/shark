@@ -49,176 +49,176 @@ using namespace std;
 auto start_t = chrono::high_resolution_clock::now();
 
 void pelapsed(const string &s = "") {
-	auto now_t = chrono::high_resolution_clock::now();
-	cerr << "[shark/" << s << "] Time elapsed "<< chrono::duration_cast<chrono::milliseconds>(now_t - start_t).count()/1000<< endl;
+  auto now_t = chrono::high_resolution_clock::now();
+  cerr << "[shark/" << s << "] Time elapsed "<< chrono::duration_cast<chrono::milliseconds>(now_t - start_t).count()/1000<< endl;
 }
 
 /*****************************************
  * Main
  *****************************************/
 int main(int argc, char *argv[]) {
-	parse_arguments(argc, argv);
+  parse_arguments(argc, argv);
 
-	// Transcripts
-	gzFile ref_file = gzopen(opt::fasta_path.c_str(), "r");
-	kseq_t *seq = kseq_init(ref_file);
-	kseq_destroy(seq);
-	gzclose(ref_file);
+  // Transcripts
+  gzFile ref_file = gzopen(opt::fasta_path.c_str(), "r");
+  kseq_t *seq = kseq_init(ref_file);
+  kseq_destroy(seq);
+  gzclose(ref_file);
 
-	// Sample 1
-	gzFile read1_file = gzopen(opt::sample1_path.c_str(), "r");
-	seq = kseq_init(read1_file);
-	kseq_destroy(seq);
-	gzclose(read1_file);
+  // Sample 1
+  gzFile read1_file = gzopen(opt::sample1_path.c_str(), "r");
+  seq = kseq_init(read1_file);
+  kseq_destroy(seq);
+  gzclose(read1_file);
 
-	// Sample 2
-	gzFile read2_file = nullptr;
-	if(opt::paired_flag)
-	{
-		read2_file = gzopen(opt::sample2_path.c_str(), "r");
-		seq = kseq_init(read2_file);
-		kseq_destroy(seq);
-		gzclose(read2_file);
-	}
+  // Sample 2
+  gzFile read2_file = nullptr;
+  if(opt::paired_flag)
+  {
+    read2_file = gzopen(opt::sample2_path.c_str(), "r");
+    seq = kseq_init(read2_file);
+    kseq_destroy(seq);
+    gzclose(read2_file);
+  }
 
-	if(opt::verbose)
-	{
-		cerr << "Reference texts: " << opt::fasta_path << endl;
-		cerr << "Sample 1: " << opt::sample1_path << endl;
-		if(opt::paired_flag)
-			cerr << "Sample 2: " << opt::sample2_path << endl;
-		cerr << "K-mer length: " << opt::k << endl;
-		cerr << "Threshold value: " << opt::c << endl;
-		cerr << "Only single associations: " << (opt::single ? "Yes" : "No") << endl;
-		cerr << "Minimum base quality: " << static_cast<int>(opt::min_quality) << endl;
-		cerr << endl;
-	}
+  if(opt::verbose)
+  {
+    cerr << "Reference texts: " << opt::fasta_path << endl;
+    cerr << "Sample 1: " << opt::sample1_path << endl;
+    if(opt::paired_flag)
+      cerr << "Sample 2: " << opt::sample2_path << endl;
+    cerr << "K-mer length: " << opt::k << endl;
+    cerr << "Threshold value: " << opt::c << endl;
+    cerr << "Only single associations: " << (opt::single ? "Yes" : "No") << endl;
+    cerr << "Minimum base quality: " << static_cast<int>(opt::min_quality) << endl;
+    cerr << endl;
+  }
 
-	/****************************************************************************/
+  /****************************************************************************/
 
-	/*** 1. First iteration over transcripts ***********************************/
+  /*** 1. First iteration over transcripts ***********************************/
   
-	vector<string> legend_ID;
-	
-	ref_file = gzopen(opt::fasta_path.c_str(), "r");
-	seq = kseq_init(ref_file);
-	int nidx = 0, seq_len;
+  vector<string> legend_ID;
+  
+  ref_file = gzopen(opt::fasta_path.c_str(), "r");
+  seq = kseq_init(ref_file);
+  int nidx = 0, seq_len;
 
-	while ((seq_len = kseq_read(seq)) >= 0)
-	{
-		string input_name = seq->name.s;
-		legend_ID.push_back(input_name);
-		++nidx;
-	}
-	kseq_destroy(seq);
-	gzclose(ref_file);
-	
-	/****************************************************************************/
-	
-	int i = 0, counter = 0, levels = ceil(log2(nidx)), max_size = opt::bf_size << levels;
-	SSBT tree(max_size);
-	SimpleBF* bloom;
-	deque<SimpleBF*> coda;
-	coda.clear();
-	
-	for(; i < nidx; i++) 
-	{
-		bloom = new SimpleBF(opt::bf_size, i);
-		coda.push_back(bloom);
-	}
-	vector<SimpleBF*> leaves;
-	leaves.clear();
-	leaves.insert(leaves.end(), coda.begin(), coda.end());
-		
-	while (coda.size() > 1)
-	{
-		SimpleBF* sx = coda.front();
-		coda.pop_front();
-		SimpleBF* dx = coda.front();
-		coda.pop_front();
-		
-		SimpleBF* node = new SimpleBF(sx, dx);
-		sx->set_parent(node);
-		dx->set_parent(node);
-		
-		coda.push_back(node);
-	}
-	coda.front()->set_parent(nullptr);
-	tree.setRoot(coda.front());
-	
-	pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
-	
-	/****************************************************************************/
-	
-	/*** 2. Second iteration over transcripts ************************************/
+  while ((seq_len = kseq_read(seq)) >= 0)
+  {
+    string input_name = seq->name.s;
+    legend_ID.push_back(input_name);
+    ++nidx;
+  }
+  kseq_destroy(seq);
+  gzclose(ref_file);
+  
+  /****************************************************************************/
+  
+  int i = 0, counter = 0, levels = ceil(log2(nidx)), max_size = opt::bf_size << levels;
+  SSBT tree(max_size);
+  SimpleBF* bloom;
+  deque<SimpleBF*> coda;
+  coda.clear();
+  
+  for(; i < nidx; i++) 
+  {
+    bloom = new SimpleBF(opt::bf_size, i);
+    coda.push_back(bloom);
+  }
+  vector<SimpleBF*> leaves;
+  leaves.clear();
+  leaves.insert(leaves.end(), coda.begin(), coda.end());
+    
+  while (coda.size() > 1)
+  {
+    SimpleBF* sx = coda.front();
+    coda.pop_front();
+    SimpleBF* dx = coda.front();
+    coda.pop_front();
+    
+    SimpleBF* node = new SimpleBF(sx, dx);
+    sx->set_parent(node);
+    dx->set_parent(node);
+    
+    coda.push_back(node);
+  }
+  coda.front()->set_parent(nullptr);
+  tree.setRoot(coda.front());
+  
+  pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+  
+  /****************************************************************************/
+  
+  /*** 2. Second iteration over transcripts ************************************/
 
-	{
-		ref_file = gzopen(opt::fasta_path.c_str(), "r");
-		kseq_t *refseq = kseq_init(ref_file);
+  {
+    ref_file = gzopen(opt::fasta_path.c_str(), "r");
+    kseq_t *refseq = kseq_init(ref_file);
 
-		tbb::filter_t<void, vector<pair<string, string>>*>
-			tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
-		tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*>
-			kb(tbb::filter::parallel, KmerBuilder(opt::k, max_size, opt::nHash));
-		tbb::filter_t<vector<pair<string,vector<size_t>>>*, void>
-			bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&tree, opt::nHash, &counter, leaves));
+    tbb::filter_t<void, vector<pair<string, string>>*>
+      tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
+    tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*>
+      kb(tbb::filter::parallel, KmerBuilder(opt::k, max_size, opt::nHash));
+    tbb::filter_t<vector<pair<string,vector<size_t>>>*, void>
+      bff(tbb::filter::serial_in_order, BloomfilterFiller(&tree, opt::nHash, &counter, leaves));
 
-		tbb::filter_t<void, void> pipeline = tr & kb & bff;
-		tbb::parallel_pipeline(opt::nThreads, pipeline);
+    tbb::filter_t<void, void> pipeline = tr & kb & bff;
+    tbb::parallel_pipeline(opt::nThreads, pipeline);
 
-		kseq_destroy(refseq);
-		gzclose(ref_file);
-	}
+    kseq_destroy(refseq);
+    gzclose(ref_file);
+  }
 
-	pelapsed("Transcript file processed");
+  pelapsed("Transcript file processed");
 
-	/****************************************************************************/
+  /****************************************************************************/
 
-	/*** 3. Iteration over the sample *****************************************/
-	// IF (FASE 1) COMMENT FROM HERE
+  /*** 3. Iteration over the sample *****************************************/
+  // IF (FASE 1) COMMENT FROM HERE
 
-	{
-		kseq_t *sseq1 = nullptr, *sseq2 = nullptr;
-		FILE *out1 = nullptr, *out2 = nullptr;
-		read1_file = gzopen(opt::sample1_path.c_str(), "r");
-		sseq1 = kseq_init(read1_file);
-		if (opt::out1_path != "")
-			out1 = fopen(opt::out1_path.c_str(), "w");
-		if(opt::paired_flag)
-		{
-			read2_file = gzopen(opt::sample2_path.c_str(), "r");
-			sseq2 = kseq_init(read2_file);
-			if (opt::out2_path != "")
-				out2 = fopen(opt::out2_path.c_str(), "w");
-		}
+  {
+    kseq_t *sseq1 = nullptr, *sseq2 = nullptr;
+    FILE *out1 = nullptr, *out2 = nullptr;
+    read1_file = gzopen(opt::sample1_path.c_str(), "r");
+    sseq1 = kseq_init(read1_file);
+    if (opt::out1_path != "")
+      out1 = fopen(opt::out1_path.c_str(), "w");
+    if(opt::paired_flag)
+    {
+      read2_file = gzopen(opt::sample2_path.c_str(), "r");
+      sseq2 = kseq_init(read2_file);
+      if (opt::out2_path != "")
+        out2 = fopen(opt::out2_path.c_str(), "w");
+    }
 
-		tbb::filter_t<void, FastqSplitter::output_t*>
-			sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
-		tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*>
-			ra(tbb::filter::parallel, ReadAnalyzer(&tree, legend_ID, opt::k, opt::c, opt::single, opt::method, opt::nHash));
-		tbb::filter_t<ReadAnalyzer::output_t*, void>
-			so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
+    tbb::filter_t<void, FastqSplitter::output_t*>
+      sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
+    tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*>
+      ra(tbb::filter::parallel, ReadAnalyzer(&tree, legend_ID, opt::k, opt::c, opt::single, opt::method, opt::nHash));
+    tbb::filter_t<ReadAnalyzer::output_t*, void>
+      so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
 
-		tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
-		tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
+    tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
+    tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
 
-		kseq_destroy(sseq1);
-		gzclose(read1_file);
-		if(opt::paired_flag)
-		{
-			kseq_destroy(sseq2);
-			gzclose(read2_file);
-		}
-		if (out1 != nullptr) fclose(out1);
-		if (out2 != nullptr) fclose(out2);
-	}
+    kseq_destroy(sseq1);
+    gzclose(read1_file);
+    if(opt::paired_flag)
+    {
+      kseq_destroy(sseq2);
+      gzclose(read2_file);
+    }
+    if (out1 != nullptr) fclose(out1);
+    if (out2 != nullptr) fclose(out2);
+  }
 
-	pelapsed("Sample completed");
+  pelapsed("Sample completed");
 
-	// IF (FASE 1) COMMENT UNTIL HERE
-	/****************************************************************************/
+  // IF (FASE 1) COMMENT UNTIL HERE
+  /****************************************************************************/
 
-	pelapsed("Association done");
+  pelapsed("Association done");
 
-	return 0;
+  return 0;
 }
