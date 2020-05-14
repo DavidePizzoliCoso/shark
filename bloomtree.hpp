@@ -42,25 +42,26 @@ class SSBT {
 public:
   typedef uint64_t kmer_t;
 
-  explicit
-  SSBT(const size_t size) : _size(size) {}
+  explicit SSBT(const SimpleBF *const root)
+      : _root(root), _size(root->size()) {}
 
-  ~SSBT() { delete root; }
+  ~SSBT() { delete _root; }
 
-  void setRoot(SimpleBF *node) { root = node; }
-
-  void get_genes(const kmer_t &kmer, vector<int> &genes, vector<size_t> &hash) const {
+  void get_genes(const kmer_t &kmer, vector<int> &genes,
+                 vector<size_t> &hash) const {
     genes.clear();
-    _get_hash(hash, kmer, _size);
-    inner_get_genes(root, _size - 1, hash, genes);
+    _get_hash(hash, kmer);
+    inner_get_genes(_root, _size - 1, hash, genes);
   }
+
+  size_t size() const { return _size; }
 
   SSBT() = delete;
   const SSBT &operator=(const SSBT &) = delete;
   const SSBT &operator=(const SSBT &&) = delete;
 
 private:
-  void inner_get_genes(const SimpleBF *node, const size_t dynamic_mask,
+  void inner_get_genes(const SimpleBF *const node, const size_t dynamic_mask,
                        const vector<size_t> &hash, vector<int> &genes) const {
     for (const auto index : hash) {
       if (!node->_bf[index & dynamic_mask])
@@ -71,15 +72,13 @@ private:
       // This is a leaf
       genes.push_back(node->_id);
     } else {
-      inner_get_genes(node->sx, dynamic_mask >> (1 + node->sx->support), hash,
-                      genes);
-      inner_get_genes(node->dx, dynamic_mask >> (1 + node->dx->support), hash,
-                      genes);
+      inner_get_genes(node->sx, dynamic_mask >> 1, hash, genes);
+      inner_get_genes(node->dx, dynamic_mask >> 1, hash, genes);
     }
   }
 
-  SimpleBF *root;
-  size_t _size;
+  const SimpleBF *const _root;
+  const size_t _size;
 };
 
 #endif

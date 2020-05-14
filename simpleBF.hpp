@@ -32,16 +32,14 @@ class SimpleBF {
   friend class SSBT;
 
 public:
-  SimpleBF(const size_t size, const int id_gene = -1)
-    : sx(nullptr), dx(nullptr), parent(nullptr), _bf(size, false), _id(id_gene), support(false) {}
+  SimpleBF(const int id_gene = -1)
+      : sx(nullptr), dx(nullptr), parent(nullptr), _bf(0, false), _id(id_gene) {
+  }
 
   SimpleBF(SimpleBF *_sx, SimpleBF *_dx)
-    : sx(_sx), dx(_dx), parent(nullptr), _bf(max(sx->_bf.size(), dx->_bf.size()) * 2, false),
-        _id(-1), support(false) {
-    sx->support = _bf.size() >> 1 != sx->_bf.size();
-    dx->support = _bf.size() >> 1 != dx->_bf.size();
-    sx->set_parent(this);
-    dx->set_parent(this);
+      : sx(_sx), dx(_dx), parent(nullptr), _bf(sx->size() * 2, false), _id(-1) {
+    _sx->parent = this;
+    _dx->parent = this;
   }
 
   ~SimpleBF() {
@@ -49,22 +47,27 @@ public:
     delete dx;
   }
 
-  void add_at(const uint64_t p) { _bf[p % _bf.size()] = true; }
+  void add_at(const uint64_t p) { _bf[p & (_bf.size() - 1)] = true; }
 
-  SimpleBF* get_parent() const { return parent; }
-  void set_parent(SimpleBF *p) { parent = p; }
+  SimpleBF *get_parent() const { return parent; }
 
-  bool get_support() const { return support; }
+  size_t size() const { return _bf.size(); };
+  void resize(const size_t size) {
+    if (size == _bf.size()) return;
+    _bf.clear();
+    _bf.resize(size, false);
+    if (sx != nullptr) sx->resize(size >> 1);
+    if (dx != nullptr) dx->resize(size >> 1);
+  }
 
 private:
   typedef std::vector<bool> bit_vector_t;
 
-  SimpleBF *sx;
-  SimpleBF *dx;
+  SimpleBF *const sx;
+  SimpleBF *const dx;
   SimpleBF *parent;
   bit_vector_t _bf;
-  int _id;
-  bool support;
+  const int _id;
 };
 
 #endif

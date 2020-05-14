@@ -97,7 +97,7 @@ void parse_arguments(int argc, char **argv) {
     case 't':
       arg >> opt::nThreads;
       if(opt::nThreads <= 0) {
-        std::cerr << "USAGE_MESSAGE";
+        std::cerr << USAGE_MESSAGE;
         std::cerr << "shark: at least 1 thread is required." << std::endl
                   << "aborting..." << std::endl;
         exit(EXIT_FAILURE);
@@ -136,6 +136,12 @@ void parse_arguments(int argc, char **argv) {
     case 'b':
       // Let's consider this as Kb
       arg >> opt::bf_size;
+      if ((opt::bf_size & (opt::bf_size - 1)) != 0) {
+        std::cerr << "shark: bloom filter size must be a power of 2." << std::endl
+                  << "aborting..." << std::endl;
+        std::cerr << USAGE_MESSAGE;
+        exit(EXIT_FAILURE);
+      }
       opt::bf_size = opt::bf_size * ((uint64_t)0b1 << 10);
       break;
     case 'q':
@@ -158,9 +164,9 @@ void parse_arguments(int argc, char **argv) {
     case 'x':
       arg >> opt::nHash;
       if(opt::nHash <= 0) {
-        std::cerr << "USAGE_MESSAGE";
         std::cerr << "shark: at least 1 hash function is required." << std::endl
                   << "aborting..." << std::endl;
+        std::cerr << USAGE_MESSAGE;
         exit(EXIT_FAILURE);
       }
 	  break;

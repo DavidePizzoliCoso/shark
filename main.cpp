@@ -115,27 +115,28 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   const size_t nidx = legend_ID.size();
-  const int levels = ceil(log2(nidx));
-  const size_t max_size = opt::bf_size << levels;
-  SSBT tree(max_size);
-  deque<SimpleBF*> coda;
-  for(size_t i = 0; i < nidx; i++)
-  {
-    coda.push_back(new SimpleBF(opt::bf_size, i));
+  deque<pair<SimpleBF *, size_t>> coda;
+  vector<SimpleBF *> leaves;
+  leaves.reserve(nidx);
+  for (size_t i = 0; i < nidx; i++) {
+    SimpleBF *node = new SimpleBF(i);
+    coda.emplace_back(node, opt::bf_size);
+    leaves.push_back(node);
   }
-  const vector<SimpleBF*> leaves(coda.begin(), coda.end());
 
-  while (coda.size() > 1)
-  {
-    SimpleBF* sx = coda.front();
+  while (coda.size() > 1) {
+    auto sx = coda.front();
     coda.pop_front();
-    SimpleBF* dx = coda.front();
+    auto dx = coda.front();
     coda.pop_front();
 
-    SimpleBF* node = new SimpleBF(sx, dx);
-    coda.push_back(node);
+    coda.emplace_back(new SimpleBF(sx.first, dx.first),
+                      2 * std::max(sx.second, dx.second));
   }
-  tree.setRoot(coda.front());
+
+  coda.front().first->resize(coda.front().second);
+
+  SSBT tree(coda.front().first);
   coda.pop_front();
 
   pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<void, vector<pair<string, string>>*>
       tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
     tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*>
-      kb(tbb::filter::parallel, KmerBuilder(opt::k, max_size, opt::nHash));
+      kb(tbb::filter::parallel, KmerBuilder(opt::k, tree.size(), opt::nHash));
     tbb::filter_t<vector<pair<string,vector<size_t>>>*, void>
       bff(tbb::filter::serial_in_order, BloomfilterFiller(&tree, counter, leaves));
 
