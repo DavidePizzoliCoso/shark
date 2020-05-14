@@ -183,10 +183,7 @@ void parse_arguments(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  if(opt::out1_path == "") {
-    opt::out1_path = "sharked_sample.1";
-  }
-  if(opt::out2_path == "" and opt::sample2_path != "") {
+  if(opt::out2_path == "" && opt::out1_path != "") {
     opt::out2_path = "sharked_sample.2";
   }
 }
