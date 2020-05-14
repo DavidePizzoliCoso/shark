@@ -24,8 +24,6 @@
 
 #include "bloomtree.hpp"
 #include "simpleBF.hpp"
-#include <cmath>
-#include <deque>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,31 +32,30 @@ using namespace std;
 
 class BloomfilterFiller {
 public:
-  BloomfilterFiller(SSBT *_sbt, int _nHash, int *_cnt, vector<SimpleBF*> &_leaves)
-      : sbt(_sbt), nHash(_nHash), counter(_cnt), leaves(_leaves) {}
+  BloomfilterFiller(SSBT *_sbt, int& _counter, const vector<SimpleBF *> &_leaves)
+      : sbt(_sbt), counter(_counter), leaves(_leaves) {}
 
   void operator()(vector<pair<string, vector<size_t>>> *genes) const {
-    
+
     SimpleBF *node;
     for (const auto &gene : *genes) {
-      node = leaves[*counter];
-    
-      while(node)
-      {
-        for (const auto position : gene.second)
+      node = leaves[counter];
+
+      while (node) {
+        for (const auto position : gene.second) {
           node->add_at(position);
-    
-        node = node->parent;
+        }
+
+        node = node->get_parent();
       }
-      ++*counter;
+      ++counter;
     }
     delete genes;
   }
 
 private:
-  SSBT *sbt;
-  const int nHash;
-  int *counter;
-  vector<SimpleBF*> &leaves;
+  SSBT const *sbt;
+  int& counter;
+  const vector<SimpleBF *> &leaves;
 };
 #endif

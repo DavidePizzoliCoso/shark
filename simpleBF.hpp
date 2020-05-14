@@ -30,17 +30,18 @@ class SSBT;
 
 class SimpleBF {
   friend class SSBT;
-  friend class BloomfilterFiller;
 
 public:
   SimpleBF(const size_t size, const int id_gene = -1)
-    : sx(nullptr), dx(nullptr), _bf(size, false), _id(id_gene), support(false) {}
+    : sx(nullptr), dx(nullptr), parent(nullptr), _bf(size, false), _id(id_gene), support(false) {}
 
   SimpleBF(SimpleBF *_sx, SimpleBF *_dx)
-      : sx(_sx), dx(_dx), _bf(max(sx->_bf.size(), dx->_bf.size()) * 2, false),
+    : sx(_sx), dx(_dx), parent(nullptr), _bf(max(sx->_bf.size(), dx->_bf.size()) * 2, false),
         _id(-1), support(false) {
     sx->support = _bf.size() >> 1 != sx->_bf.size();
     dx->support = _bf.size() >> 1 != dx->_bf.size();
+    sx->set_parent(this);
+    dx->set_parent(this);
   }
 
   ~SimpleBF() {
@@ -49,9 +50,10 @@ public:
   }
 
   void add_at(const uint64_t p) { _bf[p % _bf.size()] = true; }
-  
+
+  SimpleBF* get_parent() const { return parent; }
   void set_parent(SimpleBF *p) { parent = p; }
-  
+
   bool get_support() const { return support; }
 
 private:

@@ -26,6 +26,7 @@
 #include <vector>
 #include <map>
 #include <chrono>
+#include <cmath>
 
 #include <zlib.h>
 
@@ -97,62 +98,54 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   /*** 1. First iteration over transcripts ***********************************/
-  
+
   vector<string> legend_ID;
-  
+
   ref_file = gzopen(opt::fasta_path.c_str(), "r");
   seq = kseq_init(ref_file);
-  int nidx = 0, seq_len;
+  int seq_len;
 
   while ((seq_len = kseq_read(seq)) >= 0)
   {
-    string input_name = seq->name.s;
-    legend_ID.push_back(input_name);
-    ++nidx;
+    legend_ID.push_back(string(seq->name.s));
   }
   kseq_destroy(seq);
   gzclose(ref_file);
-  
+
   /****************************************************************************/
-  
-  int i = 0, counter = 0, levels = ceil(log2(nidx)), max_size = opt::bf_size << levels;
+
+  const size_t nidx = legend_ID.size();
+  const int levels = ceil(log2(nidx));
+  const size_t max_size = opt::bf_size << levels;
   SSBT tree(max_size);
-  SimpleBF* bloom;
   deque<SimpleBF*> coda;
-  coda.clear();
-  
-  for(; i < nidx; i++) 
+  for(size_t i = 0; i < nidx; i++)
   {
-    bloom = new SimpleBF(opt::bf_size, i);
-    coda.push_back(bloom);
+    coda.push_back(new SimpleBF(opt::bf_size, i));
   }
-  vector<SimpleBF*> leaves;
-  leaves.clear();
-  leaves.insert(leaves.end(), coda.begin(), coda.end());
-    
+  const vector<SimpleBF*> leaves(coda.begin(), coda.end());
+
   while (coda.size() > 1)
   {
     SimpleBF* sx = coda.front();
     coda.pop_front();
     SimpleBF* dx = coda.front();
     coda.pop_front();
-    
+
     SimpleBF* node = new SimpleBF(sx, dx);
-    sx->set_parent(node);
-    dx->set_parent(node);
-    
     coda.push_back(node);
   }
-  coda.front()->set_parent(nullptr);
   tree.setRoot(coda.front());
-  
+  coda.pop_front();
+
   pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
-  
+
   /****************************************************************************/
-  
+
   /*** 2. Second iteration over transcripts ************************************/
 
   {
+    int counter = 0;
     ref_file = gzopen(opt::fasta_path.c_str(), "r");
     kseq_t *refseq = kseq_init(ref_file);
 
@@ -161,7 +154,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<vector<pair<string, string>>*, vector<pair<string,vector<size_t>>>*>
       kb(tbb::filter::parallel, KmerBuilder(opt::k, max_size, opt::nHash));
     tbb::filter_t<vector<pair<string,vector<size_t>>>*, void>
-      bff(tbb::filter::serial_in_order, BloomfilterFiller(&tree, opt::nHash, &counter, leaves));
+      bff(tbb::filter::serial_in_order, BloomfilterFiller(&tree, counter, leaves));
 
     tbb::filter_t<void, void> pipeline = tr & kb & bff;
     tbb::parallel_pipeline(opt::nThreads, pipeline);
