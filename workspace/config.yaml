@@ -1,0 +1,13 @@
+data: ""
+folders:
+  input : "input"
+  output : "output"
+params:
+  k: 17
+  BF_size: [128, 256]
+  samples: "10M"
+  methods: ["base"]
+  genes: ["100", "250", "500", "1000", "2500", "5000", "10000"]
+  confidence: [6]
+  nHash: [1,2,3,4,6]
+  q: [10]

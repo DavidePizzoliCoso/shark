@@ -39,24 +39,25 @@ rule gunzip:
 rule queryExecution:
   input:
     queries = os.path.join(in_folder,"samples","sample_{sample}.fastq"),
-    genes = os.path.join(in_folder,"genes","{genes}.fa")
+    genes = os.path.join(in_folder,"genes","random_genes.{genes}.fa")
   output:
     os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.ssv")
   params:
     dir = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}")
+  threads: 4
   log:
-    time = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.tme")
+    time = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.tme"),
+    msg = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.msg")
   shell:
     """
-    mkdir -p {params.dir}
-    /usr/bin/time -vo {log.time} ../shark -q {wildcards.q} -x {wildcards.nHsh} -m {wildcards.method} -b {wildcards.BF_sz} -c 0.{wildcards.c} -r {input.genes} -1 {input.queries} > {output}
+    /usr/bin/time -vo {log.time} ../shark -s -t {threads} -q {wildcards.q} -x {wildcards.nHsh} -m {wildcards.method} -b {wildcards.BF_sz} -c 0.{wildcards.c} -r {input.genes} -1 {input.queries} > {output} 2> {log.msg}
     """
 
 rule queryCheck:
   input:
     ssv = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.ssv"),
-    beds = os.path.join(in_folder,"beds","sample_{sample}.run_1.truth.bed"),
-    gtf = os.path.join(in_folder,"genes","{genes}.gtf"),
+    beds = os.path.join(in_folder,"genes","random_genes.{genes}.truth.bed"),
+    gtf = os.path.join(in_folder,"genes","random_genes.{genes}.gtf"),
     script = os.path.join("script","check_shark.py")
   output:
     os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.res")
