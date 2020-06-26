@@ -1,0 +1,68 @@
+
+configfile: "config.yaml"
+
+import os
+
+data_folder = config["data"]
+input_name = config["folders"]["input"]
+output_name = config["folders"]["output"]
+
+samples = config["params"]["samples"]
+methods = config["params"]["methods"]
+Genes = config["params"]["genes"]
+K_value = config["params"]["k"]
+BF = config["params"]["BF_size"]
+conf = config["params"]["confidence"]
+nH = config["params"]["nHash"]
+quality = config["params"]["q"]
+
+in_folder = os.path.join(data_folder, input_name)
+out_folder = os.path.join(data_folder, output_name)
+
+rule all:
+  input:
+    expand(
+      os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.res"), 
+      nHsh = nH, method = methods, q = quality, genes=Genes, k=K_value, BF_sz=BF, sample=samples, c=conf
+    )
+
+rule gunzip:
+  input:
+    os.path.join(in_folder,"samples","sample_{sample}.fastq.gz")
+  output:
+    temp(os.path.join(in_folder,"samples","sample_{sample}.fastq"))
+  shell:
+    """
+  gzip -dk {input}
+  """
+
+rule queryExecution:
+  input:
+    queries = os.path.join(in_folder,"samples","sample_{sample}.fastq"),
+    genes = os.path.join(in_folder,"genes","{genes}.fa")
+  output:
+    os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.ssv")
+  params:
+    dir = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}")
+  log:
+    time = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.tme")
+  shell:
+    """
+    mkdir -p {params.dir}
+    /usr/bin/time -vo {log.time} ../shark -q {wildcards.q} -x {wildcards.nHsh} -m {wildcards.method} -b {wildcards.BF_sz} -c 0.{wildcards.c} -r {input.genes} -1 {input.queries} > {output}
+    """
+
+rule queryCheck:
+  input:
+    ssv = os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.ssv"),
+    beds = os.path.join(in_folder,"beds","sample_{sample}.run_1.truth.bed"),
+    gtf = os.path.join(in_folder,"genes","{genes}.gtf"),
+    script = os.path.join("script","check_shark.py")
+  output:
+    os.path.join(out_folder,"{nHsh}","{method}_{q}","{genes}_k{k}_BFsize{BF_sz}","queries_{sample}.0_{c}.res")
+  shell:
+    """
+    python3 {input.script} {input.ssv} {input.beds} {input.gtf} > {output}
+    """
+
+
